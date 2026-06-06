@@ -512,18 +512,29 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaBOlpwMBRYwCg
 
 function fetchCSV() {
   return new Promise((resolve, reject) => {
-    try {
-      const raw = window.AppInventor
-        ? window.AppInventor.getWebViewString()
-        : null;
-      if (raw && raw.trim().startsWith('{')) {
-        resolve(JSON.parse(raw));
-      } else {
-        reject(new Error('Δεν υπάρχουν δεδομένα ακόμα'));
+    let attempts = 0;
+    const maxAttempts = 30; // περιμένει μέχρι 15 δευτερόλεπτα
+    
+    const check = () => {
+      attempts++;
+      try {
+        const raw = window.AppInventor
+          ? window.AppInventor.getWebViewString()
+          : null;
+        
+        if (raw && raw.trim().startsWith('{')) {
+          resolve(JSON.parse(raw));
+        } else if (attempts >= maxAttempts) {
+          reject(new Error('Timeout - δεν ήρθαν δεδομένα'));
+        } else {
+          setTimeout(check, 500); // ξαναδοκιμάζει κάθε 500ms
+        }
+      } catch(e) {
+        reject(e);
       }
-    } catch(e) {
-      reject(e);
-    }
+    };
+    
+    check();
   });
 }
 
