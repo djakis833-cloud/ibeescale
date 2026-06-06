@@ -512,31 +512,18 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaBOlpwMBRYwCg
 
 function fetchCSV() {
   return new Promise((resolve, reject) => {
-    const cbName = '_jcb_' + Date.now();
-    const script = document.createElement('script');
-
-    const timer = setTimeout(() => {
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      reject(new Error('Timeout'));
-    }, 15000);
-
-    window[cbName] = (data) => {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      resolve(data);
-    };
-
-    script.onerror = () => {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      reject(new Error('Script load error'));
-    };
-
-    script.src = APPS_SCRIPT_URL + '?callback=' + cbName;
-    document.body.appendChild(script);
+    try {
+      const raw = window.AppInventor
+        ? window.AppInventor.getWebViewString()
+        : null;
+      if (raw && raw.trim().startsWith('{')) {
+        resolve(JSON.parse(raw));
+      } else {
+        reject(new Error('Δεν υπάρχουν δεδομένα ακόμα'));
+      }
+    } catch(e) {
+      reject(e);
+    }
   });
 }
 
