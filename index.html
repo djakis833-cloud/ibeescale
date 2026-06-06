@@ -508,15 +508,34 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaBOlpwMBRYwCg6Hjd9v9KEu2HHi7BUDXhUcx9tgJxqLs9lhwtHdo3iyI7YFE-cX6ABg/exec';
 
-// ── JSONP fetch ──
+// ── FETCH (χωρίς JSONP — λειτουργεί σε browser & MIT App Inventor WebViewer) ──
+
 function fetchCSV() {
   return new Promise((resolve, reject) => {
-    const cbName = 'jsonp_cb_' + Date.now();
+    const cbName = '_jcb_' + Date.now();
     const script = document.createElement('script');
-    const timeout = setTimeout(() => { delete window[cbName]; document.body.removeChild(script); reject(new Error('Timeout')); }, 8000);
-    window[cbName] = function(data) { clearTimeout(timeout); delete window[cbName]; document.body.removeChild(script); resolve(data); };
+
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 15000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Script load error'));
+    };
+
     script.src = APPS_SCRIPT_URL + '?callback=' + cbName;
-    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; document.body.removeChild(script); reject(new Error('Αδυναμία φόρτωσης')); };
     document.body.appendChild(script);
   });
 }
@@ -528,13 +547,13 @@ const USER_DISPLAY = {
 
 // ── STATE ──
 let CHANNELS = [], CHANNEL = '', activeChannelIndex = 0;
-let currentUser = '', userRow = null; // full row from sheet
+let currentUser = '', userRow = null;
 let myChart = null, graphCharts = {};
 let allFeeds = [], graphFeeds = [];
 let tareWeight = null, tareDate = null;
 let alertShownForSession = false, alertBatShown = false;
 let confirmCallback = null;
-let rangeMode = 'count'; // 'count' | 'date'
+let rangeMode = 'count';
 
 // ── ALERT ──
 function showAlert(title, msg, detail) {
@@ -559,10 +578,6 @@ function confirmAction(yes) {
 // ── PARSE CHANNELS ──
 function parseChannels(str) { return str.split(';').map(s => s.trim()).filter(Boolean); }
 
-// NOTE: fetchCSV returns the full object from Apps Script JSONP.
-// The Apps Script must return: { username: { password, channel, expiredDate, simSN } }
-// Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN
-
 // ── LOGIN ──
 async function doLogin() {
   const u = document.getElementById('inp-user').value.trim();
@@ -581,7 +596,7 @@ async function doLogin() {
         localStorage.removeItem('rememberMe_user'); localStorage.removeItem('rememberMe_pass');
       }
       currentUser = u;
-      userRow = user; // keeps cols: password, channel, expiredDate, simSN (cols D,E from sheet)
+      userRow = user;
       CHANNELS = parseChannels(user.channel);
       if (CHANNELS.length >= 2) {
         document.getElementById('ch-id-0').textContent = 'ID: ' + CHANNELS[0];
@@ -717,13 +732,12 @@ function doRefresh() {
   loadData();
 }
 
-// ── LOAD DATA (50 για ζυγαριά, 500 για γραφήματα) ──
+// ── LOAD DATA ──
 async function loadData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('error').style.display = 'none';
   document.getElementById('chart').style.display = 'none';
   try {
-    // Φόρτωσε 500 για γραφήματα
     const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?results=500`);
     const data = await res.json();
     allFeeds = data.feeds.filter(f => f.field1 && f.field1 !== '' && !isNaN(parseFloat(f.field1)));
@@ -953,18 +967,17 @@ function renderGraphs() {
   });
 }
 
-// ── SIM TOAST (floating 4 sec on Ζυγαριά tab) ──
+// ── SIM TOAST ──
 let _toastTimer = null;
 function showSimToast(icon, msg, cls) {
   const toast = document.getElementById('sim-toast');
   const toastIcon = document.getElementById('sim-toast-icon');
   const toastMsg  = document.getElementById('sim-toast-msg');
   if (_toastTimer) clearTimeout(_toastTimer);
-  toast.className = cls.split(' ')[0]; // toast-ok or toast-err
+  toast.className = cls.split(' ')[0];
   toastIcon.textContent = icon;
   toastMsg.textContent  = msg;
   toastMsg.className    = 'sim-toast-msg ' + (cls.includes('ok') ? 'ok' : 'err');
-  // force reflow so transition fires
   toast.offsetHeight;
   toast.classList.add('show');
   _toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 4000);
@@ -974,7 +987,6 @@ function showSimToast(icon, msg, cls) {
 async function populateInfoTab() {
   document.getElementById('info-tsid').textContent = CHANNEL || '—';
 
-  // Fetch channel name from ThingSpeak
   try {
     const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL}.json`);
     const data = await res.json();
@@ -983,7 +995,6 @@ async function populateInfoTab() {
     document.getElementById('info-name').textContent = '—';
   }
 
-  // Split D and E by ';' to support per-channel values
   const rawExpired = userRow && userRow.expiredDate ? userRow.expiredDate : '';
   const rawSim     = userRow && userRow.simSN       ? userRow.simSN       : '';
   const expiredRaw = rawExpired.split(';')[activeChannelIndex] || rawExpired.split(';')[0] || '';
@@ -991,15 +1002,12 @@ async function populateInfoTab() {
 
   document.getElementById('info-sim').textContent = simSN;
 
-  // ── Helpers ──
   function parseExpDate(str) {
     if (!str) return null;
-    // DD-MM-YYYY
     if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
       const [d,m,y] = str.split('-');
       return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
     }
-    // YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
       const [y,m,d] = str.split('-');
       return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
@@ -1026,7 +1034,7 @@ async function populateInfoTab() {
     const daysStr  = daysLeft < 0 ? '' : ` (${daysLeft} μέρες)`;
     expEl.textContent = dateStr + daysStr;
 
-    let toastIcon, toastMsg, toastCls, simBannerCls;
+    let toastIcon, toastMsg, toastCls;
 
     if (daysLeft < 0) {
       expEl.className = 'info-row-val expired';
@@ -1052,7 +1060,6 @@ async function populateInfoTab() {
       bannerText.textContent = 'Η SIM είναι ενεργοποιημένη!';
       toastIcon = '✅'; toastMsg = 'Η SIM είναι ενεργοποιημένη!'; toastCls = 'toast-ok ok';
     }
-    // Show floating toast on Ζυγαριά tab for 4 seconds
     showSimToast(toastIcon, toastMsg, toastCls);
   } else {
     expEl.textContent = '—'; expEl.className = 'info-row-val';
