@@ -1,4 +1,4 @@
-const CACHE = 'zigaria-v2';
+const CACHE = 'zigaria-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
