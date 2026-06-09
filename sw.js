@@ -1,12 +1,8 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-const CACHE = 'zigaria-v6';
-const ASSETS = [
-  './index.html',
-  './manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
-];
+const CACHE = 'zigaria-v7';
+const ASSETS = []; // μην κάνεις cache το index.html
 
 // Firebase init στον service worker
 firebase.initializeApp({
