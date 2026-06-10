@@ -21,7 +21,7 @@ jobs:
           const { GoogleAuth } = require('./node_modules/google-auth-library');
           const fs = require('fs');
 
-          const CHANNELS = ['2971083', '1448231'];
+          const CHANNELS = ['2971083', '1448231', '2565835'];
           const WEIGHT_DROP_THRESHOLD = -2500;
           const BAT_LOW_THRESHOLD = 2.9;
           const PROJECT_ID = 'ibeescale';
