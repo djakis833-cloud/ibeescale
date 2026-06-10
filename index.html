@@ -243,30 +243,15 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .sim-toast-msg { font-size: 14px; font-weight: 700; line-height: 1.4; }
 .sim-toast-msg.ok  { color: #1a7a1a; }
 .sim-toast-msg.err { color: #cc1a1a; }
-
 /* ── NOTIFICATIONS ── */
 .notif-wrap { margin: 0 10px 4px; background: #fff; border-radius: 12px; padding: 14px 16px; border: 1px solid #ddd; }
 .notif-desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 14px; }
-.btn-notif {
-  width: 100%; padding: 13px; background: #555; color: #fff;
-  border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-  font-family: 'Segoe UI', Arial, sans-serif; cursor: pointer; transition: background 0.2s;
-}
-.btn-notif:active { opacity: 0.85; }
+.btn-notif { width: 100%; padding: 13px; background: #555; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; font-family: 'Segoe UI', Arial, sans-serif; cursor: pointer; transition: background 0.2s; }
 .notif-info { font-size: 12px; color: #888; text-align: center; margin-top: 8px; min-height: 16px; }
-
 /* ── PUSH TOAST ── */
-#push-toast {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: #1a3a1a; color: #fff; border-radius: 12px;
-  padding: 14px 20px; max-width: 340px; width: 90%;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3); z-index: 1600;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s;
-  display: flex; align-items: flex-start; gap: 12px;
-}
+#push-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a3a1a; color: #fff; border-radius: 12px; padding: 14px 20px; max-width: 340px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); z-index: 1600; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; display: flex; align-items: flex-start; gap: 12px; }
 #push-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .push-toast-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
-.push-toast-body { flex: 1; }
 .push-toast-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
 .push-toast-msg { font-size: 13px; opacity: 0.85; line-height: 1.4; }
 </style>
@@ -510,7 +495,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 
     <div class="info-section-title">Ειδοποιήσεις</div>
     <div class="notif-wrap">
-      <div class="notif-desc">Λάβετε ειδοποίηση στο κινητό όταν:<br>• Μεγάλη πτώση βάρους (&gt;2.5 kg/ημέρα)<br>• Χαμηλή μπαταρία (&lt;2.9v)<br>• Νέα δεδομένα από τη ζυγαριά</div>
+      <div class="notif-desc">Λάβετε ειδοποίηση ακόμα και όταν η εφαρμογή είναι κλειστή:<br>• 📡 Νέα δεδομένα από τη ζυγαριά<br>• ⚠️ Μεγάλη πτώση βάρους (&gt;2.5 kg)<br>• 🔋 Χαμηλή μπαταρία (&lt;2.9v)</div>
       <button class="btn-notif" id="notif-btn" onclick="window._requestNotificationPermission && window._requestNotificationPermission()">🔕 Ενεργοποίηση Ειδοποιήσεων</button>
       <div class="notif-info" id="notif-info"></div>
     </div>
@@ -574,7 +559,6 @@ let tareWeight = null, tareDate = null;
 let alertShownForSession = false, alertBatShown = false;
 let confirmCallback = null;
 let rangeMode = 'count'; // 'count' | 'date'
-let lastSeenTimestamp = null; // για ειδοποίηση νέων δεδομένων
 
 // ── ALERT ──
 function showAlert(title, msg, detail) {
@@ -788,15 +772,6 @@ function updateUI() {
   document.getElementById('weight-main').textContent = weightNow.toFixed(3) + ' kg';
   document.getElementById('last-time').textContent = 'Τελευταία μέτρηση: ' + fmtDate(latest.created_at);
 
-  // Ειδοποίηση νέων δεδομένων
-  if (lastSeenTimestamp && latest.created_at !== lastSeenTimestamp) {
-    if (Notification.permission === 'granted') {
-      new Notification('📡 Νέα Δεδομένα', { body: '⚖️ ' + weightNow.toFixed(3) + ' kg  •  ' + fmtDate(latest.created_at), icon: 'icon-192.png' });
-    }
-    if (window.showToastNotification) showToastNotification('📡 Νέα Δεδομένα', '⚖️ ' + weightNow.toFixed(3) + ' kg', '📡');
-  }
-  lastSeenTimestamp = latest.created_at;
-
   if (prev) {
     document.getElementById('prev-weight').textContent = parseFloat(prev.field1).toFixed(3) + ' kg';
     document.getElementById('prev-weight-time').textContent = fmtTimeOnly(prev.created_at);
@@ -833,12 +808,6 @@ function updateUI() {
     if (dayAlert)  details.push('Διαφορά Ημέρας: ' + dd.text);
     if (prevAlert) details.push('Διαφορά Προηγ. Μέτρησης: ' + dp.text);
     showAlert('ΕΙΔΟΠΟΙΗΣΗ ΖΥΓΑΡΙΑΣ', 'ΠΡΟΣΟΧΗ!\nΥπάρχει μεγάλη πτώση βάρους στη ζυγαριά!', details.join('  |  '));
-    // Push notification (foreground)
-    if (window.showToastNotification) showToastNotification('⚠️ Πτώση Βάρους!', details.join(' | '), '⚠️');
-    // Native notification (background/locked screen)
-    if (Notification.permission === 'granted') {
-      new Notification('⚠️ Πτώση Βάρους!', { body: details.join(' | '), icon: 'icon-192.png', badge: 'icon-192.png' });
-    }
   }
   if (!dayAlert && !prevAlert) alertShownForSession = false;
 
@@ -881,10 +850,6 @@ function updateUI() {
   if (batNow !== null && batNow < 2.9 && !alertBatShown) {
     alertBatShown = true;
     showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(3) + ' v');
-    if (window.showToastNotification) showToastNotification('🔋 Χαμηλή Μπαταρία', 'Στάθμη: ' + batNow.toFixed(3) + ' v', '🔋');
-    if (Notification.permission === 'granted') {
-      new Notification('🔋 Χαμηλή Μπαταρία', { body: 'Στάθμη: ' + batNow.toFixed(3) + ' v', icon: 'icon-192.png' });
-    }
   }
   if (batNow !== null && batNow >= 2.9) alertBatShown = false;
   const pB = lastFor('field4');
@@ -1209,20 +1174,22 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
 <!-- PUSH TOAST -->
 <div id="push-toast">
   <div class="push-toast-icon" id="push-toast-icon">🔔</div>
-  <div class="push-toast-body">
+  <div>
     <div class="push-toast-title" id="push-toast-title"></div>
-    <div class="push-toast-msg" id="push-toast-msg"></div>
+    <div class="push-toast-msg"   id="push-toast-msg"></div>
   </div>
 </div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+import { getFirestore, doc, setDoc }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDGMWEOc3TUVco2WR1j8bABLZux-DmnWVo",
   authDomain: "ibeescale.firebaseapp.com",
   projectId: "ibeescale",
@@ -1232,52 +1199,62 @@ const firebaseConfig = {
 };
 const VAPID_KEY = 'BKtKprLcrT54XA4CJSNLN-UwDIVV1sY-sXrNhPHzpeyWUiDEuoU39PMpbDqQ-93bKOEUZN4S8EwxdJgin0eymwg';
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const fbApp   = initializeApp(FIREBASE_CONFIG);
+const messaging = getMessaging(fbApp);
+const db        = getFirestore(fbApp);
 
-// Εμφάνιση toast όταν η εφαρμογή είναι ανοιχτή (foreground)
+// Toast helper
+window.showPushToast = function(icon, title, msg) {
+  const t = document.getElementById('push-toast');
+  document.getElementById('push-toast-icon').textContent  = icon;
+  document.getElementById('push-toast-title').textContent = title;
+  document.getElementById('push-toast-msg').textContent   = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 5000);
+};
+
+// Foreground notification
 onMessage(messaging, payload => {
   const title = payload.notification?.title || 'Ζυγαριά';
   const body  = payload.notification?.body  || '';
-  showToastNotification(title, body);
+  window.showPushToast('🔔', title, body);
 });
 
-// Ειδοποίηση foreground από τον JS κώδικα (πτώση βάρους, μπαταρία κτλ)
-window.showToastNotification = function(title, body, icon) {
-  const toast = document.getElementById('push-toast');
-  document.getElementById('push-toast-icon').textContent  = icon || '🔔';
-  document.getElementById('push-toast-title').textContent = title;
-  document.getElementById('push-toast-msg').textContent   = body;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 5000);
-};
-
+// Ενεργοποίηση + αποθήκευση token στο Firestore
 window._requestNotificationPermission = async function() {
-  const btn      = document.getElementById('notif-btn');
-  const infoEl   = document.getElementById('notif-info');
+  const btn    = document.getElementById('notif-btn');
+  const infoEl = document.getElementById('notif-info');
   infoEl.textContent = 'Αναμονή...';
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      infoEl.textContent = '⚠️ Οι ειδοποιήσεις δεν επιτράπηκαν από τον browser.';
+      infoEl.textContent = '⚠️ Δεν δόθηκε άδεια από τον browser.';
       return;
     }
     await navigator.serviceWorker.ready;
-    const reg = await navigator.serviceWorker.getRegistration();
+    const reg   = await navigator.serviceWorker.getRegistration();
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (token) {
+      // Αποθήκευση token στο Firestore — το Cloud Function θα το διαβάζει
+      const user = localStorage.getItem('rememberMe_user') || 'unknown';
+      await setDoc(doc(db, 'fcm_tokens', token), {
+        token,
+        user,
+        channels: ['2971083', '1448231'],
+        updatedAt: new Date().toISOString()
+      });
       localStorage.setItem('fcm_token', token);
-      btn.textContent = '🔔 Ειδοποιήσεις ON';
+      btn.textContent      = '🔔 Ειδοποιήσεις ON';
       btn.style.background = '#2d5a2d';
-      infoEl.textContent = '✅ Ενεργοποιημένες';
-      showToastNotification('✅ Ειδοποιήσεις', 'Θα λαμβάνετε ειδοποιήσεις από τη ζυγαριά!', '✅');
+      infoEl.textContent   = '✅ Ενεργοποιημένες';
+      window.showPushToast('✅', 'Ειδοποιήσεις', 'Ενεργοποιήθηκαν επιτυχώς!');
     }
   } catch(e) {
     infoEl.textContent = 'Σφάλμα: ' + e.message;
   }
 };
 
-// Επαναφορά κατάστασης κουμπιού αν ήδη ενεργοποιημένες
+// Επαναφορά κατάστασης κουμπιού
 window.addEventListener('load', () => {
   if (Notification.permission === 'granted' && localStorage.getItem('fcm_token')) {
     const btn = document.getElementById('notif-btn');
@@ -1287,6 +1264,5 @@ window.addEventListener('load', () => {
   }
 });
 </script>
-
 </body>
 </html>
