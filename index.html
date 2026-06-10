@@ -403,14 +403,6 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
         <div class="prev-item"><div class="prev-item-label">📶 Σήμα</div><div class="prev-item-val" id="prev-sig">—</div><div class="prev-item-time" id="prev-sig-time"></div></div>
       </div>
     </div>
-    <div class="tare-card">
-      <div class="tare-buttons">
-        <button class="btn-tare" id="btn-tare" onclick="doTare()">TARE</button>
-        <div class="tare-diff" id="tare-diff">—</div>
-        <button class="btn-clear" onclick="doClear()">clear</button>
-      </div>
-      <div class="tare-ref" id="tare-ref">Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος</div>
-    </div>
     <div class="chart-card">
       <div class="chart-title">Βάρος κυψέλης – Τελευταίες 20 μετρήσεις</div>
       <div class="chart-wrap">
@@ -418,6 +410,14 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
         <div class="error-msg" id="error" style="display:none"></div>
         <canvas id="chart" style="display:none"></canvas>
       </div>
+    </div>
+    <div class="tare-card">
+      <div class="tare-buttons">
+        <button class="btn-tare" id="btn-tare" onclick="doTare()">TARE</button>
+        <div class="tare-diff" id="tare-diff">—</div>
+        <button class="btn-clear" onclick="doClear()">clear</button>
+      </div>
+      <div class="tare-ref" id="tare-ref">Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος</div>
     </div>
   </div><!-- end tab-scale -->
 
@@ -497,6 +497,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <div class="notif-wrap">
       <div class="notif-desc">Λάβετε ειδοποίηση ακόμα και όταν η εφαρμογή είναι κλειστή:<br>• 📡 Νέα δεδομένα από τη ζυγαριά<br>• ⚠️ Μεγάλη πτώση βάρους (&gt;2.5 kg)<br>• 🔋 Χαμηλή μπαταρία (&lt;2.9v)</div>
       <button class="btn-notif" id="notif-btn" onclick="window._requestNotificationPermission && window._requestNotificationPermission()">🔕 Ενεργοποίηση Ειδοποιήσεων</button>
+      <button class="btn-notif" id="notif-disable-btn" onclick="window._disableNotifications && window._disableNotifications()" style="display:none;margin-top:8px;background:#c0392b;">🔕 Απενεργοποίηση Ειδοποιήσεων</button>
       <div class="notif-info" id="notif-info"></div>
     </div>
 
@@ -1187,7 +1188,7 @@ if ('serviceWorker' in navigator) {
 <script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
-import { getFirestore, doc, setDoc }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDGMWEOc3TUVco2WR1j8bABLZux-DmnWVo",
@@ -1235,18 +1236,21 @@ window._requestNotificationPermission = async function() {
     const reg   = await navigator.serviceWorker.getRegistration();
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (token) {
-      // Αποθήκευση token στο Firestore — το Cloud Function θα το διαβάζει
       const user = localStorage.getItem('rememberMe_user') || 'unknown';
+      // Κανάλια ανά χρήστη
+      const userChannels = {
+        'test1':  ['2971083', '1448231'],
+        'nikos1': ['2565835']
+      };
+      const channels = userChannels[user] || [];
       await setDoc(doc(db, 'fcm_tokens', token), {
-        token,
-        user,
-        channels: ['2971083', '1448231'],
+        token, user, channels,
         updatedAt: new Date().toISOString()
       });
       localStorage.setItem('fcm_token', token);
-      btn.textContent      = '🔔 Ειδοποιήσεις ON';
-      btn.style.background = '#2d5a2d';
-      infoEl.textContent   = '✅ Ενεργοποιημένες';
+      btn.style.display = 'none';
+      document.getElementById('notif-disable-btn').style.display = 'block';
+      infoEl.textContent = '✅ Ενεργοποιημένες';
       window.showPushToast('✅', 'Ειδοποιήσεις', 'Ενεργοποιήθηκαν επιτυχώς!');
     }
   } catch(e) {
@@ -1254,11 +1258,32 @@ window._requestNotificationPermission = async function() {
   }
 };
 
-// Επαναφορά κατάστασης κουμπιού
+// Απενεργοποίηση ειδοποιήσεων
+window._disableNotifications = async function() {
+  const infoEl = document.getElementById('notif-info');
+  infoEl.textContent = 'Απενεργοποίηση...';
+  try {
+    const token = localStorage.getItem('fcm_token');
+    if (token) {
+      await deleteDoc(doc(db, 'fcm_tokens', token));
+      localStorage.removeItem('fcm_token');
+    }
+    document.getElementById('notif-btn').style.display = 'block';
+    document.getElementById('notif-disable-btn').style.display = 'none';
+    infoEl.textContent = '🔕 Απενεργοποιημένες';
+    window.showPushToast('🔕', 'Ειδοποιήσεις', 'Απενεργοποιήθηκαν.');
+  } catch(e) {
+    infoEl.textContent = 'Σφάλμα: ' + e.message;
+  }
+};
+
+// Επαναφορά κατάστασης κουμπιών
 window.addEventListener('load', () => {
   if (Notification.permission === 'granted' && localStorage.getItem('fcm_token')) {
     const btn = document.getElementById('notif-btn');
-    if (btn) { btn.textContent = '🔔 Ειδοποιήσεις ON'; btn.style.background = '#2d5a2d'; }
+    const dis = document.getElementById('notif-disable-btn');
+    if (btn) btn.style.display = 'none';
+    if (dis) dis.style.display = 'block';
     const info = document.getElementById('notif-info');
     if (info) info.textContent = '✅ Ενεργοποιημένες';
   }
