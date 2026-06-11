@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-const CACHE = 'zigaria-v10';
+const CACHE = 'zigaria-v11';
 
 firebase.initializeApp({
   apiKey: "AIzaSyDGMWEOc3TUVco2WR1j8bABLZux-DmnWVo",
