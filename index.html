@@ -1188,7 +1188,7 @@ if ('serviceWorker' in navigator) {
 <script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
-import { getFirestore, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, deleteDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDGMWEOc3TUVco2WR1j8bABLZux-DmnWVo",
@@ -1243,6 +1243,15 @@ window._requestNotificationPermission = async function() {
         'nikos1': ['2565835']
       };
       const channels = userChannels[user] || [];
+
+      // Διέγραψε όλα τα παλιά tokens του ίδιου χρήστη
+      try {
+        const q = query(collection(db, 'fcm_tokens'), where('user', '==', user));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) await deleteDoc(d.ref);
+      } catch(e) { console.warn('Cleanup error:', e.message); }
+
+      // Αποθήκευσε το νέο token
       await setDoc(doc(db, 'fcm_tokens', token), {
         token, user, channels,
         updatedAt: new Date().toISOString()
