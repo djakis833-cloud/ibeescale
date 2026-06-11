@@ -130,8 +130,8 @@ jobs:
             for (const channelId of CHANNELS) {
               console.log(`\n🔍 Κανάλι ${channelId}...`);
               try {
-                const data  = await httpGet(`https://api.thingspeak.com/channels/${channelId}/feeds.json?results=2`);
-                const feeds = data.feeds || [];
+                const data  = await httpGet(`https://api.thingspeak.com/channels/${channelId}/feeds.json?results=500`);
+                const feeds = data.feeds.filter(f => f.field1 && !isNaN(parseFloat(f.field1)));
                 if (!feeds.length) { console.log('  Δεν υπάρχουν δεδομένα'); continue; }
 
                 const latest    = feeds[feeds.length - 1];
@@ -139,6 +139,18 @@ jobs:
                 const latestTs  = latest.created_at;
                 const weightNow = parseFloat(latest.field1);
                 const batNow    = latest.field4 ? parseFloat(latest.field4) : null;
+
+                // Διαφορά ημέρας: βρες μέτρηση κοντά στις 21:00 χθες
+                const yesterday21 = new Date(latestTs);
+                yesterday21.setDate(yesterday21.getDate() - 1);
+                yesterday21.setHours(21, 0, 0, 0);
+                let dayFeed = null, bestD = Infinity;
+                for (const f of feeds) {
+                  const d = Math.abs(new Date(f.created_at).getTime() - yesterday21.getTime());
+                  if (d < bestD) { bestD = d; dayFeed = f; }
+                }
+                const dayDiffGrams = dayFeed ? Math.round((weightNow - parseFloat(dayFeed.field1)) * 1000) : null;
+                const dayDiffStr   = dayDiffGrams !== null ? (dayDiffGrams >= 0 ? '+' : '') + dayDiffGrams + ' gr' : '—';
 
                 const state  = await getState(channelId, accessToken);
                 const tokens = await getFcmTokens(channelId, accessToken);
@@ -150,8 +162,9 @@ jobs:
 
                 if (latestTs !== state.lastTimestamp) {
                   console.log('  📡 Νέα δεδομένα!');
+                  const notifBody = `⚖️ ${weightNow.toFixed(3)} kg  •  Διαφορά ημέρας: ${dayDiffStr}`;
                   for (const t of tokens)
-                    await sendNotification(t, '📡 Νέα Δεδομένα', `⚖️ ${weightNow.toFixed(3)} kg`, accessToken);
+                    await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
 
                   if (prev) {
                     const diffGrams = Math.round((weightNow - parseFloat(prev.field1)) * 1000);
