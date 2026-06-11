@@ -38,13 +38,13 @@ jobs:
             });
           }
 
-          function httpPost(url, body, token) {
+          function httpRequest(method, url, body, token) {
             return new Promise((resolve, reject) => {
               const data = JSON.stringify(body);
               const u = new URL(url);
               const req = https.request({
                 hostname: u.hostname, path: u.pathname + u.search,
-                method: 'POST',
+                method,
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer ' + token,
@@ -59,6 +59,8 @@ jobs:
               req.write(data); req.end();
             });
           }
+          const httpPost  = (url, body, token) => httpRequest('POST',  url, body, token);
+          const httpPatch = (url, body, token) => httpRequest('PATCH', url, body, token);
 
           async function getAccessToken() {
             const auth = new GoogleAuth({
@@ -87,13 +89,15 @@ jobs:
 
           async function saveState(channelId, state, accessToken) {
             const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/channel_state/${channelId}?access_token=${accessToken}`;
-            await httpPost(url, {
+            const body = {
               fields: {
                 lastTimestamp: { stringValue: state.lastTimestamp },
                 batAlerted:    { booleanValue: state.batAlerted },
                 updatedAt:     { stringValue: new Date().toISOString() }
               }
-            }, accessToken).catch(() => {});
+            };
+            const res = await httpPatch(url, body, accessToken).catch(e => ({ status: 0, body: e.message }));
+            console.log(`  💾 saveState HTTP ${res.status}`);
           }
 
           async function getFcmTokens(channelId, accessToken) {
