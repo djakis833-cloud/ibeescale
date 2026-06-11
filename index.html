@@ -485,6 +485,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v10</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -609,10 +610,7 @@ async function doLogin() {
       userRow = user; // keeps cols: password, channel, expiredDate, simSN (cols D,E from sheet)
       CHANNELS = parseChannels(user.channel);
       if (CHANNELS.length >= 2) {
-        document.getElementById('ch-id-0').textContent = 'ID: ' + CHANNELS[0];
-        document.getElementById('ch-id-1').textContent = 'ID: ' + CHANNELS[1];
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('channel-screen').classList.add('visible');
+        CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       } else {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       }
@@ -846,11 +844,11 @@ function updateUI() {
 
   const batNow = latest.field4 ? parseFloat(latest.field4) : null;
   const batEl = document.getElementById('bat');
-  batEl.textContent = batNow !== null ? batNow.toFixed(3) + ' v' : '—';
+  batEl.textContent = batNow !== null ? batNow.toFixed(1) + ' v' : '—';
   batEl.classList.toggle('blink-alert', batNow !== null && batNow < 2.9);
   if (batNow !== null && batNow < 2.9 && !alertBatShown) {
     alertBatShown = true;
-    showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(3) + ' v');
+    showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(1) + ' v');
   }
   if (batNow !== null && batNow >= 2.9) alertBatShown = false;
   const pB = lastFor('field4');
@@ -865,7 +863,7 @@ function updateUI() {
   document.getElementById('prev-temp-time').textContent = pT ? fmtTimeOnly(pT.created_at) : '';
   document.getElementById('prev-hum').textContent  = pH ? parseFloat(pH.field3).toFixed(1) + ' %'  : '—';
   document.getElementById('prev-hum-time').textContent  = pH ? fmtTimeOnly(pH.created_at) : '';
-  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB.field4).toFixed(3) + ' v'  : '—';
+  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB.field4).toFixed(1) + ' v'  : '—';
   document.getElementById('prev-bat-time').textContent  = pB ? fmtTimeOnly(pB.created_at) : '';
   document.getElementById('prev-sig').textContent  = pS ? Math.round(parseFloat(pS.field5)) + ' %' : '—';
   document.getElementById('prev-sig-time').textContent  = pS ? fmtTimeOnly(pS.created_at) : '';
