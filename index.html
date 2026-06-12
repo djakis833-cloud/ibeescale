@@ -248,6 +248,10 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .notif-desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 14px; }
 .btn-notif { width: 100%; padding: 13px; background: #555; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; font-family: 'Segoe UI', Arial, sans-serif; cursor: pointer; transition: background 0.2s; }
 .notif-info { font-size: 12px; color: #888; text-align: center; margin-top: 8px; min-height: 16px; }
+/* ── HUMIDITY TOAST ── */
+#hum-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) scale(0.88); background: #1a6dcc; color: #fff; border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 700; text-align: center; max-width: 300px; width: 88%; box-shadow: 0 8px 28px rgba(26,109,204,0.45); z-index: 1600; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; line-height: 1.4; }
+#hum-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
 /* ── PUSH TOAST ── */
 #push-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a3a1a; color: #fff; border-radius: 12px; padding: 14px 20px; max-width: 340px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); z-index: 1600; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; display: flex; align-items: flex-start; gap: 12px; }
 #push-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -485,7 +489,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v11</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v10</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -740,6 +744,28 @@ function doRefresh() {
   loadData();
 }
 
+// ── DEDUPLICATION: κρατά μόνο 1 μέτρηση ανά χρονικό παράθυρο 5 λεπτών ──
+// Οι ώρες αποστολής: 03:00-03:05, 09:00-09:05, 10:00-10:05, 11:00-11:05,
+//                    12:00-12:05, 15:00-15:05, 18:00-18:05, 21:00-21:05
+const SCHEDULE_HOURS = [3, 9, 10, 11, 12, 15, 18, 21];
+function deduplicateFeeds(feeds) {
+  const seen = new Set();
+  return feeds.filter(f => {
+    const d = new Date(f.created_at);
+    const h = d.getHours();
+    const m = d.getMinutes();
+    // Έλεγξε αν η μέτρηση ανήκει σε κάποιο από τα προγραμματισμένα παράθυρα (hh:00 - hh:04)
+    if (SCHEDULE_HOURS.includes(h) && m >= 0 && m <= 4) {
+      // Κλειδί: χρήστης + κανάλι + ημέρα + ώρα (αγνοούμε τα λεπτά/δευτερόλεπτα)
+      const dayStr = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      const key = `${dayStr}_${h}`;
+      if (seen.has(key)) return false; // διπλή — απόρριψη
+      seen.add(key);
+    }
+    return true;
+  });
+}
+
 // ── LOAD DATA (50 για ζυγαριά, 500 για γραφήματα) ──
 async function loadData() {
   document.getElementById('loading').style.display = 'block';
@@ -749,7 +775,8 @@ async function loadData() {
     // Φόρτωσε 500 για γραφήματα
     const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?results=500`);
     const data = await res.json();
-    allFeeds = data.feeds.filter(f => f.field1 && f.field1 !== '' && !isNaN(parseFloat(f.field1)));
+    const rawFeeds = data.feeds.filter(f => f.field1 && f.field1 !== '' && !isNaN(parseFloat(f.field1)));
+    allFeeds = deduplicateFeeds(rawFeeds);
     graphFeeds = allFeeds;
     if (!allFeeds.length) throw new Error('Δεν βρέθηκαν δεδομένα');
     updateUI();
@@ -838,7 +865,13 @@ function updateUI() {
   setArrow('arrow-temp', tempNow, pT ? parseFloat(pT.field2) : null);
 
   const humNow = latest.field3 ? parseFloat(latest.field3) : null;
-  document.getElementById('hum').textContent = humNow !== null ? humNow.toFixed(1) + ' %' : '—';
+  const humEl = document.getElementById('hum');
+  humEl.textContent = humNow !== null ? humNow.toFixed(1) + ' %' : '—';
+  humEl.className = 'sensor-value';
+  if (humNow !== null && humNow > 85) {
+    humEl.classList.add('blink-blue');
+    showHumToast();
+  }
   const pH = lastFor('field3');
   setArrow('arrow-hum', humNow, pH ? parseFloat(pH.field3) : null);
 
@@ -974,6 +1007,18 @@ function renderGraphs() {
       });
     });
   });
+}
+
+// ── HUMIDITY TOAST (3 sec) ──
+let _humToastTimer = null;
+function showHumToast() {
+  const t = document.getElementById('hum-toast');
+  if (_humToastTimer) return; // ήδη εμφανίζεται
+  t.classList.add('show');
+  _humToastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    _humToastTimer = null;
+  }, 3000);
 }
 
 // ── SIM TOAST (floating 4 sec on Ζυγαριά tab) ──
@@ -1173,6 +1218,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- HUMIDITY TOAST -->
+<div id="hum-toast">💧 Αυξημένη υγρασία, πιθανή βροχόπτωση στη τοποθεσία αυτή!</div>
 
 <!-- PUSH TOAST -->
 <div id="push-toast">
