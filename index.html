@@ -18,8 +18,14 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 /* ── LOGIN ── */
 #login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
 .login-logo { font-size: 64px; margin-bottom: 10px; }
+.login-ibee { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: 1px; margin-bottom: 4px; }
 .login-title { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .login-subtitle { font-size: 13px; color: #a8d5a8; margin-bottom: 32px; }
+.login-footer { margin-top: 24px; text-align: center; }
+.login-version { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 600; margin-bottom: 6px; letter-spacing: 0.5px; }
+.login-contact { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600; }
+.login-contact a { color: #7ec87e; text-decoration: none; font-weight: 700; }
+.login-contact a:active { opacity: 0.7; }
 .login-card { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 340px; }
 .login-field { margin-bottom: 16px; }
 .login-field label { display: block; font-size: 12px; font-weight: 600; color: #a8d5a8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
@@ -265,6 +271,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 <!-- ── LOGIN SCREEN ── -->
 <div id="login-screen">
   <div class="login-logo">🍯</div>
+  <div class="login-ibee">iBeeScale</div>
   <div class="login-title">Ζυγαριά Κυψέλης</div>
   <div class="login-subtitle">Παρακαλώ συνδεθείτε για να συνεχίσετε</div>
   <div class="login-card">
@@ -284,6 +291,10 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <div class="login-loading" id="login-loading"></div>
     <div class="login-error" id="login-error"></div>
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
+  </div>
+  <div class="login-footer">
+    <div class="login-version">ver. 11</div>
+    <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
 
@@ -489,7 +500,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v12</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v10</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -561,6 +572,7 @@ let CHANNELS = [], CHANNEL = '', activeChannelIndex = 0;
 let currentUser = '', userRow = null; // full row from sheet
 let myChart = null, graphCharts = {};
 let allFeeds = [], graphFeeds = [];
+window.allFeeds = allFeeds; // expose for Firebase module
 let tareWeight = null, tareDate = null;
 let alertShownForSession = false, alertBatShown = false;
 let confirmCallback = null;
@@ -777,6 +789,7 @@ async function loadData() {
     const data = await res.json();
     const rawFeeds = data.feeds.filter(f => f.field1 && f.field1 !== '' && !isNaN(parseFloat(f.field1)));
     allFeeds = deduplicateFeeds(rawFeeds);
+    window.allFeeds = allFeeds; // sync global for Firebase module
     graphFeeds = allFeeds;
     if (!allFeeds.length) throw new Error('Δεν βρέθηκαν δεδομένα');
     updateUI();
@@ -1263,7 +1276,23 @@ window.showPushToast = function(icon, title, msg) {
 // Foreground notification
 onMessage(messaging, payload => {
   const title = payload.notification?.title || 'Ζυγαριά';
-  const body  = payload.notification?.body  || '';
+  let body = payload.notification?.body || '';
+
+  // Αν έχουμε τοπικά δεδομένα, αντικαθιστούμε το body με τη μορφή "34.601 kg - -47 gr"
+  try {
+    if (window.allFeeds && window.allFeeds.length >= 2) {
+      const latest = window.allFeeds[window.allFeeds.length - 1];
+      const prev   = window.allFeeds[window.allFeeds.length - 2];
+      const weightNow = parseFloat(latest.field1);
+      const weightPrev = parseFloat(prev.field1);
+      if (!isNaN(weightNow) && !isNaN(weightPrev)) {
+        const grams = Math.round((weightNow - weightPrev) * 1000);
+        const sign  = grams >= 0 ? '+' : '';
+        body = weightNow.toFixed(3) + ' kg - ' + sign + grams + ' gr';
+      }
+    }
+  } catch(e) {}
+
   window.showPushToast('🔔', title, body);
 });
 
