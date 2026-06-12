@@ -166,7 +166,9 @@ jobs:
 
                 if (latestTs !== state.lastTimestamp) {
                   console.log('  📡 Νέα δεδομένα!');
-                  const notifBody = `⚖️ ${weightNow.toFixed(3)} kg  •  Διαφορά ημέρας: ${dayDiffStr}`;
+                  const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
+                  const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
+                  const notifBody = `${weightNow.toFixed(3)} kg - ${diffFromPrevStr}`;
                   for (const t of tokens)
                     await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
 
