@@ -168,7 +168,7 @@ jobs:
                   console.log('  📡 Νέα δεδομένα!');
                   const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
                   const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
-                  const notifBody = `${weightNow.toFixed(3)} kg - ${diffFromPrevStr}`;
+                  const notifBody = `${weightNow.toFixed(3)} kg •• ${diffFromPrevStr}`;
                   for (const t of tokens)
                     await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
 
