@@ -129,8 +129,12 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .prev-item-label { font-size: 14px; color: #888; margin-bottom: 2px; }
 .prev-item-val { font-size: 15px; font-weight: 700; color: #333; }
 .prev-item-time { font-size: 14px; color: #aaa; margin-top: 1px; }
-.prev-weight-body { display: flex; align-items: flex-start; justify-content: center; gap: 18px; }
+.prev-weight-body { display: flex; align-items: stretch; justify-content: center; gap: 6px; flex-wrap: nowrap; }
 .prev-weight-row { text-align: center; }
+.prev-weight-box { border: 2px solid #999; border-radius: 6px; padding: 6px 4px; text-align: center; background: #d0d0d0; flex: 1; min-width: 0; overflow: hidden; }
+.prev-weight-box.prev-weight-box-main { flex: 1.6; }
+.prev-weight-box .prev-item-val { font-size: 13px; white-space: nowrap; }
+.prev-weight-box #prev-weight-diff { font-size: 13px !important; white-space: nowrap; }
 .tare-card { background: #d8d8d8; margin: 8px 8px 0; border-radius: 10px; padding: 12px 16px; }
 .tare-buttons { display: flex; align-items: center; gap: 10px; }
 .btn-tare { background: #999; color: #111; border: none; border-radius: 6px; padding: 10px 20px; font-size: 16px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.2s, opacity 0.2s; }
@@ -294,7 +298,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.1</div>
+    <div class="login-version">ver. 15.4.2</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -415,18 +419,20 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
         <div class="prev-item prev-weight-row" style="grid-column:1/-1">
           <div class="prev-item-label">⚖️ Βάρος</div>
           <div class="prev-weight-body">
-            <div>
-              <div style="display:flex;align-items:center;gap:8px;">
+            <div class="prev-weight-box prev-weight-box-main">
+              <div style="display:flex;align-items:center;gap:4px;justify-content:center;flex-wrap:nowrap;white-space:nowrap;">
                 <div class="prev-item-val" id="prev-weight">—</div>
-                <span id="prev-weight-diff" style="font-weight:700;font-size:15px;display:none;"></span>
+                <span id="prev-weight-diff" style="font-weight:700;font-size:13px;display:none;white-space:nowrap;"></span>
               </div>
               <div class="prev-item-time" id="prev-weight-time"></div>
             </div>
-            <div id="prev-weight-diff-wrap" style="display:none; text-align:center;">
-              <div style="text-align:center;">
-                <div class="prev-item-val" id="prev-prevprev-weight">—</div>
-                <div id="prev-weight-diff-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
-              </div>
+            <div id="prev-weight-diff-wrap" class="prev-weight-box" style="display:none;">
+              <div class="prev-item-val" id="prev-prevprev-weight">—</div>
+              <div id="prev-weight-diff-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
+            </div>
+            <div id="prev-weight-p3-wrap" class="prev-weight-box" style="display:none;">
+              <div class="prev-item-val" id="prev-p3-weight">—</div>
+              <div id="prev-p3-weight-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
             </div>
           </div>
         </div>
@@ -518,7 +524,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.1</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.2</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -846,9 +852,20 @@ function updateUI() {
       diffTimeEl.textContent = fmtTimeOnly(prevPrev.created_at);
       document.getElementById('prev-prevprev-weight').textContent = parseFloat(prevPrev.field1).toFixed(3) + ' kg';
       diffWrap.style.display = 'block';
+      // Τρίτο προηγούμενο βάρος (allFeeds[-4])
+      const p3 = allFeeds.length >= 4 ? allFeeds[allFeeds.length - 4] : null;
+      const p3Wrap = document.getElementById('prev-weight-p3-wrap');
+      if (p3) {
+        document.getElementById('prev-p3-weight').textContent = parseFloat(p3.field1).toFixed(3) + ' kg';
+        document.getElementById('prev-p3-weight-time').textContent = fmtTimeOnly(p3.created_at);
+        p3Wrap.style.display = 'block';
+      } else {
+        p3Wrap.style.display = 'none';
+      }
     } else {
       diffEl.style.display = 'none';
       diffWrap.style.display = 'none';
+      document.getElementById('prev-weight-p3-wrap').style.display = 'none';
     }
   } else {
     document.getElementById('prev-weight').textContent = '—';
