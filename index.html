@@ -294,7 +294,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4</div>
+    <div class="login-version">ver. 15.4.1</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -416,16 +416,17 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
           <div class="prev-item-label">⚖️ Βάρος</div>
           <div class="prev-weight-body">
             <div>
-              <div class="prev-item-val" id="prev-weight">—</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="prev-item-val" id="prev-weight">—</div>
+                <span id="prev-weight-diff" style="font-weight:700;font-size:15px;display:none;"></span>
+              </div>
               <div class="prev-item-time" id="prev-weight-time"></div>
             </div>
             <div id="prev-weight-diff-wrap" style="display:none; text-align:center;">
-              <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-                <span class="prev-item-val" id="prev-prevprev-weight">—</span>
-                <span style="color:#aaa;">••</span>
-                <span id="prev-weight-diff" style="font-weight:700;font-size:15px;"></span>
+              <div style="text-align:center;">
+                <div class="prev-item-val" id="prev-prevprev-weight">—</div>
+                <div id="prev-weight-diff-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
               </div>
-              <div id="prev-weight-diff-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
             </div>
           </div>
         </div>
@@ -517,7 +518,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.1</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -841,10 +842,12 @@ function updateUI() {
       const sign = grams >= 0 ? '+' : '';
       diffEl.textContent = sign + grams + ' gr';
       diffEl.style.color = grams >= 0 ? '#1a7a1a' : '#cc1a1a';
+      diffEl.style.display = 'inline';
       diffTimeEl.textContent = fmtTimeOnly(prevPrev.created_at);
       document.getElementById('prev-prevprev-weight').textContent = parseFloat(prevPrev.field1).toFixed(3) + ' kg';
       diffWrap.style.display = 'block';
     } else {
+      diffEl.style.display = 'none';
       diffWrap.style.display = 'none';
     }
   } else {
