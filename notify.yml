@@ -1,0 +1,206 @@
+name: Zigaria Notifications
+
+on:
+  schedule:
+    - cron: '* * * * *'  # Κάθε λεπτό
+  workflow_dispatch:      # Χειροκίνητη εκτέλεση για δοκιμή
+
+jobs:
+  check-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: npm install google-auth-library
+
+      - name: Check ThingSpeak & Send Notifications
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node << 'NODESCRIPT'
+          const https = require('https');
+          const { GoogleAuth } = require('./node_modules/google-auth-library');
+          const fs = require('fs');
+
+          const CHANNELS = ['2971083', '1448231', '2565835'];
+          const WEIGHT_DROP_THRESHOLD = -2500;
+          const BAT_LOW_THRESHOLD = 2.9;
+          const PROJECT_ID = 'ibeescale';
+
+          fs.writeFileSync('/tmp/sa.json', process.env.FIREBASE_SERVICE_ACCOUNT);
+
+          function httpGet(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, res => {
+                let data = '';
+                res.on('data', c => data += c);
+                res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
+              }).on('error', reject);
+            });
+          }
+
+          function httpRequest(method, url, body, token) {
+            return new Promise((resolve, reject) => {
+              const data = JSON.stringify(body);
+              const u = new URL(url);
+              const req = https.request({
+                hostname: u.hostname, path: u.pathname + u.search,
+                method,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Length': Buffer.byteLength(data)
+                }
+              }, res => {
+                let d = '';
+                res.on('data', c => d += c);
+                res.on('end', () => resolve({ status: res.statusCode, body: d }));
+              });
+              req.on('error', reject);
+              req.write(data); req.end();
+            });
+          }
+          const httpPost  = (url, body, token) => httpRequest('POST',  url, body, token);
+          const httpPatch = (url, body, token) => httpRequest('PATCH', url, body, token);
+
+          async function getAccessToken() {
+            const auth = new GoogleAuth({
+              keyFile: '/tmp/sa.json',
+              scopes: [
+                'https://www.googleapis.com/auth/firebase.messaging',
+                'https://www.googleapis.com/auth/datastore'
+              ]
+            });
+            const client = await auth.getClient();
+            const t = await client.getAccessToken();
+            return t.token;
+          }
+
+          async function getState(channelId, accessToken) {
+            const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/channel_state/${channelId}?access_token=${accessToken}`;
+            try {
+              const res = await httpGet(url);
+              if (res.fields) return {
+                lastTimestamp: res.fields.lastTimestamp?.stringValue || '',
+                batAlerted:    res.fields.batAlerted?.booleanValue   || false
+              };
+            } catch(e) {}
+            return { lastTimestamp: '', batAlerted: false };
+          }
+
+          async function saveState(channelId, state, accessToken) {
+            const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/channel_state/${channelId}?access_token=${accessToken}`;
+            const body = {
+              fields: {
+                lastTimestamp: { stringValue: state.lastTimestamp },
+                batAlerted:    { booleanValue: state.batAlerted },
+                updatedAt:     { stringValue: new Date().toISOString() }
+              }
+            };
+            const res = await httpPatch(url, body, accessToken).catch(e => ({ status: 0, body: e.message }));
+            console.log(`  💾 saveState HTTP ${res.status}`);
+          }
+
+          async function getFcmTokens(channelId, accessToken) {
+            const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/fcm_tokens?access_token=${accessToken}&pageSize=100`;
+            try {
+              const res = await httpGet(url);
+              const tokens = [];
+              (res.documents || []).forEach(doc => {
+                const d = doc.fields;
+                const channels = (d.channels?.arrayValue?.values || []).map(v => v.stringValue);
+                if (channels.includes(channelId)) tokens.push(d.token?.stringValue);
+              });
+              return tokens.filter(Boolean);
+            } catch(e) { return []; }
+          }
+
+          async function sendNotification(token, title, body, accessToken) {
+            const url = `https://fcm.googleapis.com/v1/projects/${PROJECT_ID}/messages:send`;
+            const res = await httpPost(url, {
+              message: {
+                token,
+                notification: { title, body },
+                android: { priority: 'high', notification: { sound: 'default', channel_id: 'zigaria' } },
+                apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
+              }
+            }, accessToken);
+            console.log(`  → ${title}: HTTP ${res.status}`);
+          }
+
+          async function main() {
+            const accessToken = await getAccessToken();
+            console.log('✅ Access token OK');
+
+            for (const channelId of CHANNELS) {
+              console.log(`\n🔍 Κανάλι ${channelId}...`);
+              try {
+                const data  = await httpGet(`https://api.thingspeak.com/channels/${channelId}/feeds.json?results=500`);
+                const feeds = data.feeds.filter(f => f.field1 && !isNaN(parseFloat(f.field1)));
+                if (!feeds.length) { console.log('  Δεν υπάρχουν δεδομένα'); continue; }
+
+                const latest    = feeds[feeds.length - 1];
+                const prev      = feeds.length >= 2 ? feeds[feeds.length - 2] : null;
+                const latestTs  = latest.created_at;
+                const weightNow = parseFloat(latest.field1);
+                const batNow    = latest.field4 ? parseFloat(latest.field4) : null;
+
+                // Διαφορά ημέρας: βρες μέτρηση κοντά στις 21:00 χθες
+                const yesterday21 = new Date(latestTs);
+                yesterday21.setDate(yesterday21.getDate() - 1);
+                yesterday21.setHours(21, 0, 0, 0);
+                let dayFeed = null, bestD = Infinity;
+                for (const f of feeds) {
+                  const d = Math.abs(new Date(f.created_at).getTime() - yesterday21.getTime());
+                  if (d < bestD) { bestD = d; dayFeed = f; }
+                }
+                const dayDiffGrams = dayFeed ? Math.round((weightNow - parseFloat(dayFeed.field1)) * 1000) : null;
+                const dayDiffStr   = dayDiffGrams !== null ? (dayDiffGrams >= 0 ? '+' : '') + dayDiffGrams + ' gr' : '—';
+
+                const state  = await getState(channelId, accessToken);
+                const tokens = await getFcmTokens(channelId, accessToken);
+                console.log(`  Tokens: ${tokens.length} | Last: ${state.lastTimestamp} | New: ${latestTs}`);
+
+                if (!tokens.length) { console.log('  Κανένα token'); continue; }
+
+                let newState = { ...state };
+
+                if (latestTs !== state.lastTimestamp) {
+                  console.log('  📡 Νέα δεδομένα!');
+                  const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
+                  const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
+                  const notifBody = `${weightNow.toFixed(3)} kg - ${diffFromPrevStr}`;
+                  for (const t of tokens)
+                    await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
+
+                  if (prev) {
+                    const diffGrams = Math.round((weightNow - parseFloat(prev.field1)) * 1000);
+                    if (diffGrams < WEIGHT_DROP_THRESHOLD) {
+                      const sign = diffGrams >= 0 ? '+' : '';
+                      console.log(`  ⚠️ Πτώση: ${sign}${diffGrams} gr`);
+                      for (const t of tokens)
+                        await sendNotification(t, '⚠️ Πτώση Βάρους!', `${sign}${diffGrams} gr  •  Κυψέλη ${channelId}`, accessToken);
+                    }
+                  }
+                  newState.lastTimestamp = latestTs;
+                }
+
+                if (batNow !== null && batNow < BAT_LOW_THRESHOLD && !state.batAlerted) {
+                  console.log(`  🔋 Χαμηλή μπαταρία: ${batNow}v`);
+                  for (const t of tokens)
+                    await sendNotification(t, '🔋 Χαμηλή Μπαταρία', `${batNow.toFixed(3)} v  •  Κυψέλη ${channelId}`, accessToken);
+                  newState.batAlerted = true;
+                }
+                if (batNow === null || batNow >= BAT_LOW_THRESHOLD) newState.batAlerted = false;
+
+                await saveState(channelId, newState, accessToken);
+                console.log('  ✅ State OK');
+
+              } catch(e) {
+                console.error(`  ❌ Σφάλμα: ${e.message}`);
+              }
+            }
+            console.log('\n✅ Τέλος');
+          }
+
+          main().catch(e => { console.error('FATAL:', e.message); process.exit(1); });
+          NODESCRIPT
