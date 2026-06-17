@@ -298,7 +298,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.2</div>
+    <div class="login-version">ver. 15.4.3</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -524,7 +524,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.2</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.3</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -1102,7 +1102,7 @@ function showSimToast(icon, msg, cls) {
   // force reflow so transition fires
   toast.offsetHeight;
   toast.classList.add('show');
-  _toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 4000);
+  _toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
 // ── INFO TAB ──
