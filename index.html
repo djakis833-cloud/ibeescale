@@ -298,7 +298,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.3</div>
+    <div class="login-version">ver. 15.4.4</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -385,14 +385,14 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
   <div id="tab-scale" class="tab-page active">
     <div class="weight-card">
       <div class="weight-row">
-        <div class="hive-icon">🍯</div>
-        <div class="sensor-val-wrap">
+        <div class="hive-icon">⚖️</div>
+        <div class="sensor-val-wrap" style="justify-content:center;gap:8px;">
           <div class="weight-value" id="weight-main">—</div>
-          <span class="trend-arrow" id="arrow-weight"></span>
+          <span id="diff-prev" class="diff-pos" style="font-size:26px;font-weight:700;white-space:nowrap;"></span>
         </div>
       </div>
-      <div class="diff-row">Διαφορά Ημέρας : <b><span id="diff-day" class="diff-pos">—</span></b></div>
-      <div class="diff-row">Διαφορά Προηγ. Μέτρησης : <b><span id="diff-prev" class="diff-pos">—</span></b></div>
+      <div class="diff-row">Διαφορά Ημέρας : <b><span id="diff-day" class="diff-pos" style="font-size:26px;">—</span></b></div>
+      <div class="diff-row" style="display:none;">Διαφορά Προηγ. Μέτρησης : <b><span id="diff-prev-hidden" class="diff-pos">—</span></b></div>
       <div class="last-time" id="last-time">Τελευταία μέτρηση: —</div>
     </div>
     <div class="sensors-card">
@@ -524,7 +524,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.3</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.4</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -918,7 +918,7 @@ function updateUI() {
     else                          { el.textContent = '▼'; el.className = 'trend-arrow trend-down'; }
   }
 
-  setArrow('arrow-weight', weightNow, prev ? parseFloat(prev.field1) : null);
+  // arrow-weight αφαιρέθηκε - η διαφορά εμφανίζεται inline δίπλα στο βάρος
 
   const tempNow = latest.field2 ? parseFloat(latest.field2) : null;
   const tempEl = document.getElementById('temp');
