@@ -209,10 +209,6 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .graph-loading { text-align: center; padding: 40px 0; color: #bbb; font-size: 12px; }
 
 /* ── INFO TAB ── */
-.info-logo-wrap { background: #fff; padding: 28px 16px 16px; text-align: center; }
-.info-logo-emoji { font-size: 64px; display: block; margin-bottom: 6px; }
-.info-brand { font-size: 28px; font-weight: 800; color: #111; letter-spacing: -0.5px; }
-.info-contact { font-size: 14px; color: #888; margin-top: 4px; }
 .info-section-title { font-size: 16px; font-weight: 800; color: #111; padding: 14px 16px 8px; background: #e8e8e8; border-top: 2px solid #ccc; }
 .info-card { background: #ddd; margin: 0 8px 0; border-radius: 10px; padding: 14px 16px; }
 .info-row { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #ccc; align-items: flex-start; }
@@ -298,7 +294,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.4</div>
+    <div class="login-version">ver. 15.4.5</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -512,33 +508,19 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 
   <!-- ══ TAB: INFO ══ -->
   <div id="tab-info" class="tab-page">
-    <div class="info-logo-wrap">
-      <span class="info-logo-emoji">🐝</span>
-      <div class="info-brand">iBeeScale</div>
-      <div class="info-contact">Contact : +306970065700</div>
-    </div>
-
     <div class="info-section-title">Πληροφορίες</div>
     <div class="info-card">
       <div class="info-row"><span class="info-row-label">name :</span><span class="info-row-val" id="info-name">—</span></div>
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.4</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.5</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
     <div id="sim-status-banner">
       <span class="sim-banner-icon" id="sim-banner-icon">📶</span>
       <span class="sim-banner-text" id="sim-banner-text"></span>
-    </div>
-
-    <div class="info-section-title">Ειδοποιήσεις</div>
-    <div class="notif-wrap">
-      <div class="notif-desc">Λάβετε ειδοποίηση ακόμα και όταν η εφαρμογή είναι κλειστή:<br>• 📡 Νέα δεδομένα από τη ζυγαριά<br>• ⚠️ Μεγάλη πτώση βάρους (&gt;2.5 kg)<br>• 🔋 Χαμηλή μπαταρία (&lt;2.9v)</div>
-      <button class="btn-notif" id="notif-btn" onclick="window._requestNotificationPermission && window._requestNotificationPermission()">🔕 Ενεργοποίηση Ειδοποιήσεων</button>
-      <button class="btn-notif" id="notif-disable-btn" onclick="window._disableNotifications && window._disableNotifications()" style="display:none;margin-top:8px;background:#c0392b;">🔕 Απενεργοποίηση Ειδοποιήσεων</button>
-      <div class="notif-info" id="notif-info"></div>
     </div>
 
     <div class="info-section-title">Σημειώσεις</div>
@@ -549,6 +531,14 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
         <button class="btn-notes-clear" onclick="clearNotes()">Clear</button>
       </div>
       <div class="notes-saved-msg" id="notes-saved-msg"></div>
+    </div>
+
+    <div class="info-section-title">Ειδοποιήσεις</div>
+    <div class="notif-wrap">
+      <div class="notif-desc">Λάβετε ειδοποίηση ακόμα και όταν η εφαρμογή είναι κλειστή:<br>• 📡 Νέα δεδομένα από τη ζυγαριά<br>• ⚠️ Μεγάλη πτώση βάρους (&gt;2.5 kg)<br>• 🔋 Χαμηλή μπαταρία (&lt;2.9v)</div>
+      <button class="btn-notif" id="notif-btn" onclick="window._requestNotificationPermission && window._requestNotificationPermission()">🔕 Ενεργοποίηση Ειδοποιήσεων</button>
+      <button class="btn-notif" id="notif-disable-btn" onclick="window._disableNotifications && window._disableNotifications()" style="display:none;margin-top:8px;background:#c0392b;">🔕 Απενεργοποίηση Ειδοποιήσεων</button>
+      <div class="notif-info" id="notif-info"></div>
     </div>
   </div><!-- end tab-info -->
 
@@ -590,6 +580,17 @@ const USER_DISPLAY = {
   'test1':  { name: 'Akis2', badge: 'No2' },
   'nikos1': { name: 'Nikos', badge: 'No1' },
 };
+
+// ── Field mapping (ThingSpeak field N -> sensor) ──
+// Προεπιλογή: field2=θερμοκρασία, field3=υγρασία, field4=μπαταρία, field5=σήμα
+// Εξαιρέσεις ανά κανάλι (π.χ. nalban / 406938): διαφορετική αντιστοίχιση
+const DEFAULT_FIELD_MAP = { temp: 'field2', hum: 'field3', bat: 'field4', sig: 'field5' };
+const CHANNEL_FIELD_MAPS = {
+  '406938': { temp: 'field3', hum: 'field4', bat: 'field6', sig: 'field7' }, // nalban
+};
+function getFieldMap() {
+  return CHANNEL_FIELD_MAPS[CHANNEL] || DEFAULT_FIELD_MAP;
+}
 
 // ── STATE ──
 let CHANNELS = [], CHANNEL = '', activeChannelIndex = 0;
@@ -920,7 +921,9 @@ function updateUI() {
 
   // arrow-weight αφαιρέθηκε - η διαφορά εμφανίζεται inline δίπλα στο βάρος
 
-  const tempNow = latest.field2 ? parseFloat(latest.field2) : null;
+  const FM = getFieldMap();
+
+  const tempNow = latest[FM.temp] ? parseFloat(latest[FM.temp]) : null;
   const tempEl = document.getElementById('temp');
   tempEl.textContent = tempNow !== null ? tempNow.toFixed(1) + ' °C' : '—';
   tempEl.className = 'sensor-value';
@@ -928,10 +931,10 @@ function updateUI() {
     if (tempNow > 38) tempEl.classList.add('blink-alert');
     else if (tempNow < 7) tempEl.classList.add('temp-cold');
   }
-  const pT = lastFor('field2');
-  setArrow('arrow-temp', tempNow, pT ? parseFloat(pT.field2) : null);
+  const pT = lastFor(FM.temp);
+  setArrow('arrow-temp', tempNow, pT ? parseFloat(pT[FM.temp]) : null);
 
-  const humNow = latest.field3 ? parseFloat(latest.field3) : null;
+  const humNow = latest[FM.hum] ? parseFloat(latest[FM.hum]) : null;
   const humEl = document.getElementById('hum');
   humEl.textContent = humNow !== null ? humNow.toFixed(1) + ' %' : '—';
   humEl.className = 'sensor-value';
@@ -939,10 +942,10 @@ function updateUI() {
     humEl.classList.add('blink-blue');
     showHumToast();
   }
-  const pH = lastFor('field3');
-  setArrow('arrow-hum', humNow, pH ? parseFloat(pH.field3) : null);
+  const pH = lastFor(FM.hum);
+  setArrow('arrow-hum', humNow, pH ? parseFloat(pH[FM.hum]) : null);
 
-  const batNow = latest.field4 ? parseFloat(latest.field4) : null;
+  const batNow = latest[FM.bat] ? parseFloat(latest[FM.bat]) : null;
   const batEl = document.getElementById('bat');
   batEl.textContent = batNow !== null ? batNow.toFixed(1) + ' v' : '—';
   batEl.classList.toggle('blink-alert', batNow !== null && batNow < 2.9);
@@ -951,21 +954,21 @@ function updateUI() {
     showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(1) + ' v');
   }
   if (batNow !== null && batNow >= 2.9) alertBatShown = false;
-  const pB = lastFor('field4');
-  setArrow('arrow-bat', batNow, pB ? parseFloat(pB.field4) : null);
+  const pB = lastFor(FM.bat);
+  setArrow('arrow-bat', batNow, pB ? parseFloat(pB[FM.bat]) : null);
 
-  const sigNow = latest.field5 ? parseFloat(latest.field5) : null;
+  const sigNow = latest[FM.sig] ? parseFloat(latest[FM.sig]) : null;
   document.getElementById('sig').textContent = sigNow !== null ? Math.round(sigNow) + ' %' : '—';
-  const pS = lastFor('field5');
-  setArrow('arrow-sig', sigNow, pS ? parseFloat(pS.field5) : null);
+  const pS = lastFor(FM.sig);
+  setArrow('arrow-sig', sigNow, pS ? parseFloat(pS[FM.sig]) : null);
 
-  document.getElementById('prev-temp').textContent = pT ? parseFloat(pT.field2).toFixed(1) + ' °C' : '—';
+  document.getElementById('prev-temp').textContent = pT ? parseFloat(pT[FM.temp]).toFixed(1) + ' °C' : '—';
   document.getElementById('prev-temp-time').textContent = pT ? fmtTimeOnly(pT.created_at) : '';
-  document.getElementById('prev-hum').textContent  = pH ? parseFloat(pH.field3).toFixed(1) + ' %'  : '—';
+  document.getElementById('prev-hum').textContent  = pH ? parseFloat(pH[FM.hum]).toFixed(1) + ' %'  : '—';
   document.getElementById('prev-hum-time').textContent  = pH ? fmtTimeOnly(pH.created_at) : '';
-  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB.field4).toFixed(1) + ' v'  : '—';
+  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB[FM.bat]).toFixed(1) + ' v'  : '—';
   document.getElementById('prev-bat-time').textContent  = pB ? fmtTimeOnly(pB.created_at) : '';
-  document.getElementById('prev-sig').textContent  = pS ? Math.round(parseFloat(pS.field5)) + ' %' : '—';
+  document.getElementById('prev-sig').textContent  = pS ? Math.round(parseFloat(pS[FM.sig])) + ' %' : '—';
   document.getElementById('prev-sig-time').textContent  = pS ? fmtTimeOnly(pS.created_at) : '';
 
   updateTareDiff(weightNow);
@@ -1018,13 +1021,16 @@ function getFilteredFeeds() {
 
 function applyGraphRange() { renderGraphs(); }
 
-const GRAPH_DEFS = [
-  { id: 'weight', toggleId: 'gt-weight', field: 'field1', label: '⚖️ Βάρος (kg)', color: '#f0a500', unit: ' kg', toFixed: 3 },
-  { id: 'temp',   toggleId: 'gt-temp',   field: 'field2', label: '🌡️ Θερμοκρασία (°C)', color: '#e05050', unit: ' °C', toFixed: 1 },
-  { id: 'hum',    toggleId: 'gt-hum',    field: 'field3', label: '💧 Υγρασία (%)', color: '#1a6dcc', unit: ' %', toFixed: 1 },
-  { id: 'bat',    toggleId: 'gt-bat',    field: 'field4', label: '🔋 Μπαταρία (v)', color: '#4a9e4a', unit: ' v', toFixed: 3 },
-  { id: 'sig',    toggleId: 'gt-sig',    field: 'field5', label: '📶 Σήμα (%)', color: '#888', unit: ' %', toFixed: 0 },
-];
+function getGraphDefs() {
+  const FM = getFieldMap();
+  return [
+    { id: 'weight', toggleId: 'gt-weight', field: 'field1', label: '⚖️ Βάρος (kg)', color: '#f0a500', unit: ' kg', toFixed: 3 },
+    { id: 'temp',   toggleId: 'gt-temp',   field: FM.temp,  label: '🌡️ Θερμοκρασία (°C)', color: '#e05050', unit: ' °C', toFixed: 1 },
+    { id: 'hum',    toggleId: 'gt-hum',    field: FM.hum,   label: '💧 Υγρασία (%)', color: '#1a6dcc', unit: ' %', toFixed: 1 },
+    { id: 'bat',    toggleId: 'gt-bat',    field: FM.bat,   label: '🔋 Μπαταρία (v)', color: '#4a9e4a', unit: ' v', toFixed: 3 },
+    { id: 'sig',    toggleId: 'gt-sig',    field: FM.sig,   label: '📶 Σήμα (%)', color: '#888', unit: ' %', toFixed: 0 },
+  ];
+}
 
 function destroyGraphCharts() {
   Object.values(graphCharts).forEach(c => { try { c.destroy(); } catch(e){} });
@@ -1037,7 +1043,7 @@ function renderGraphs() {
   container.innerHTML = '';
   destroyGraphCharts();
 
-  const activeDefs = GRAPH_DEFS.filter(d => document.getElementById(d.toggleId).checked);
+  const activeDefs = getGraphDefs().filter(d => document.getElementById(d.toggleId).checked);
   if (!activeDefs.length || !feeds.length) {
     document.getElementById('graphs-nodata').style.display = 'block';
     document.getElementById('graphs-nodata').textContent = feeds.length ? 'Επιλέξτε τουλάχιστον ένα γράφημα.' : 'Δεν υπάρχουν δεδομένα για το επιλεγμένο εύρος.';
