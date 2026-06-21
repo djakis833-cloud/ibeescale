@@ -724,6 +724,7 @@ function switchChannel(idx) {
   alertShownForSession = false; alertBatShown = false;
   document.getElementById('hdr-badge').textContent = 'No ' + (idx + 1);
   updatePills(); restoreTare(); restoreNotes(); loadData(); populateInfoTab();
+  window.scrollTo(0, 0);
 }
 function updatePills() {
   document.getElementById('pill-0').classList.toggle('active', activeChannelIndex === 0);
@@ -737,6 +738,7 @@ function switchTab(tab) {
     document.getElementById('nav-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'graphs' && allFeeds.length) renderGraphs();
+  window.scrollTo(0, 0);
 }
 
 // ── LOGOUT ──
