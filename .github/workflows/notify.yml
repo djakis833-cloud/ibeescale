@@ -21,7 +21,6 @@ jobs:
           const { GoogleAuth } = require('./node_modules/google-auth-library');
           const fs = require('fs');
 
-          const CHANNELS = ['2971083', '1448231', '2565835'];
           const WEIGHT_DROP_THRESHOLD = -2500;
           const BAT_LOW_THRESHOLD = 2.9;
           const PROJECT_ID = 'ibeescale';
@@ -100,18 +99,27 @@ jobs:
             console.log(`  💾 saveState HTTP ${res.status}`);
           }
 
-          async function getFcmTokens(channelId, accessToken) {
-            const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/fcm_tokens?access_token=${accessToken}&pageSize=100`;
+          async function getAllFcmTokens(accessToken) {
+            const byChannel = {};
+            let pageToken = '';
             try {
-              const res = await httpGet(url);
-              const tokens = [];
-              (res.documents || []).forEach(doc => {
-                const d = doc.fields;
-                const channels = (d.channels?.arrayValue?.values || []).map(v => v.stringValue);
-                if (channels.includes(channelId)) tokens.push(d.token?.stringValue);
-              });
-              return tokens.filter(Boolean);
-            } catch(e) { return []; }
+              do {
+                const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/fcm_tokens?access_token=${accessToken}&pageSize=300` + (pageToken ? `&pageToken=${pageToken}` : '');
+                const res = await httpGet(url);
+                (res.documents || []).forEach(doc => {
+                  const d = doc.fields;
+                  const token = d.token?.stringValue;
+                  const channels = (d.channels?.arrayValue?.values || []).map(v => v.stringValue);
+                  if (!token) return;
+                  channels.forEach(ch => {
+                    if (!byChannel[ch]) byChannel[ch] = [];
+                    byChannel[ch].push(token);
+                  });
+                });
+                pageToken = res.nextPageToken || '';
+              } while (pageToken);
+            } catch(e) { console.error('  ❌ getAllFcmTokens:', e.message); }
+            return byChannel;
           }
 
           async function sendNotification(token, title, body, accessToken) {
@@ -130,6 +138,10 @@ jobs:
           async function main() {
             const accessToken = await getAccessToken();
             console.log('✅ Access token OK');
+
+            const tokensByChannel = await getAllFcmTokens(accessToken);
+            const CHANNELS = Object.keys(tokensByChannel);
+            console.log(`📋 Κανάλια από Firestore (${CHANNELS.length}): ${CHANNELS.join(', ') || '—'}`);
 
             for (const channelId of CHANNELS) {
               console.log(`\n🔍 Κανάλι ${channelId}...`);
@@ -158,7 +170,7 @@ jobs:
                 const dayDiffStr   = dayDiffGrams !== null ? (dayDiffGrams >= 0 ? '+' : '') + dayDiffGrams + ' gr' : '—';
 
                 const state  = await getState(channelId, accessToken);
-                const tokens = await getFcmTokens(channelId, accessToken);
+                const tokens = tokensByChannel[channelId] || [];
                 console.log(`  Tokens: ${tokens.length} | Last: ${state.lastTimestamp} | New: ${latestTs}`);
 
                 if (!tokens.length) { console.log('  Κανένα token'); continue; }
