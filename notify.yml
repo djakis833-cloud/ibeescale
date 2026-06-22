@@ -168,7 +168,8 @@ jobs:
                   console.log('  📡 Νέα δεδομένα!');
                   const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
                   const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
-                  const notifBody = `${weightNow.toFixed(3)} kg - ${diffFromPrevStr}`;
+                  const timeStr = new Date(latestTs).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Athens' });
+                  const notifBody = `${weightNow.toFixed(3)} kg  •  ${diffFromPrevStr}  •  ${timeStr}`;
                   for (const t of tokens)
                     await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
 
