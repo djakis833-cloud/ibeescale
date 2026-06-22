@@ -679,6 +679,7 @@ async function doLogin() {
       currentUser = u;
       userRow = user; // keeps cols: password, channel, expiredDate, simSN (cols D,E from sheet)
       CHANNELS = parseChannels(user.channel);
+      window.currentUser = currentUser; window.CHANNELS = CHANNELS; // ορατό στο module script των ειδοποιήσεων
       if (CHANNELS.length >= 2) {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       } else {
@@ -716,6 +717,7 @@ function enterApp() {
   restoreNotes();
   loadData();
   populateInfoTab();
+  if (window.refreshNotifButtonState) window.refreshNotifButtonState();
 }
 
 function switchChannel(idx) {
@@ -746,6 +748,8 @@ function doLogout() {
   CHANNEL = ''; currentUser = ''; CHANNELS = []; allFeeds = []; graphFeeds = []; activeChannelIndex = 0;
   userRow = null; tareWeight = null; tareDate = null;
   alertShownForSession = false; alertBatShown = false; window._simAlertShown = false;
+  window.currentUser = ''; window.CHANNELS = [];
+  if (window.refreshNotifButtonState) window.refreshNotifButtonState(); // ξεκαθαρίζει τα κουμπιά ειδοποιήσεων για τον επόμενο χρήστη
   if (myChart) { myChart.destroy(); myChart = null; }
   destroyGraphCharts();
   document.getElementById('graphs-container').innerHTML = '';
@@ -1432,13 +1436,9 @@ window._requestNotificationPermission = async function() {
     const reg   = await navigator.serviceWorker.getRegistration();
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (token) {
-      const user = localStorage.getItem('rememberMe_user') || 'unknown';
-      // Κανάλια ανά χρήστη
-      const userChannels = {
-        'test1':  ['2971083', '1448231'],
-        'nikos1': ['2565835']
-      };
-      const channels = userChannels[user] || [];
+      const user = window.currentUser || localStorage.getItem('rememberMe_user') || 'unknown';
+      // Κανάλια του τρέχοντος χρήστη (ήδη υπολογισμένα στο login, π.χ. CHANNELS = ['2284739'])
+      const channels = (window.CHANNELS && window.CHANNELS.length) ? window.CHANNELS : [];
 
       // Διέγραψε όλα τα παλιά tokens του ίδιου χρήστη
       try {
@@ -1453,6 +1453,7 @@ window._requestNotificationPermission = async function() {
         updatedAt: new Date().toISOString()
       });
       localStorage.setItem('fcm_token', token);
+      localStorage.setItem('fcm_token_user', user); // ποιανού χρήστη είναι ενεργό αυτό το token
       btn.style.display = 'none';
       document.getElementById('notif-disable-btn').style.display = 'block';
       infoEl.textContent = '✅ Ενεργοποιημένες';
@@ -1472,6 +1473,7 @@ window._disableNotifications = async function() {
     if (token) {
       await deleteDoc(doc(db, 'fcm_tokens', token));
       localStorage.removeItem('fcm_token');
+      localStorage.removeItem('fcm_token_user');
     }
     document.getElementById('notif-btn').style.display = 'block';
     document.getElementById('notif-disable-btn').style.display = 'none';
@@ -1482,17 +1484,24 @@ window._disableNotifications = async function() {
   }
 };
 
-// Επαναφορά κατάστασης κουμπιών
-window.addEventListener('load', () => {
-  if (Notification.permission === 'granted' && localStorage.getItem('fcm_token')) {
-    const btn = document.getElementById('notif-btn');
-    const dis = document.getElementById('notif-disable-btn');
-    if (btn) btn.style.display = 'none';
-    if (dis) dis.style.display = 'block';
-    const info = document.getElementById('notif-info');
-    if (info) info.textContent = '✅ Ενεργοποιημένες';
-  }
-});
+// Επαναφορά κατάστασης κουμπιών — ΠΑΝΤΑ σε σχέση με τον ΤΡΕΧΟΝ συνδεδεμένο χρήστη,
+// όχι απλά "υπάρχει granted permission/token κάπου στη συσκευή"
+window.refreshNotifButtonState = function() {
+  const btn  = document.getElementById('notif-btn');
+  const dis  = document.getElementById('notif-disable-btn');
+  const info = document.getElementById('notif-info');
+  if (!btn || !dis) return;
+  const tokenUser = localStorage.getItem('fcm_token_user');
+  const isEnabledForThisUser =
+    Notification.permission === 'granted' &&
+    !!localStorage.getItem('fcm_token') &&
+    !!window.currentUser &&
+    tokenUser === window.currentUser;
+  btn.style.display  = isEnabledForThisUser ? 'none'  : 'block';
+  dis.style.display  = isEnabledForThisUser ? 'block' : 'none';
+  if (info) info.textContent = isEnabledForThisUser ? '✅ Ενεργοποιημένες' : '';
+};
+window.addEventListener('load', () => window.refreshNotifButtonState());
 </script>
 </body>
 </html>
