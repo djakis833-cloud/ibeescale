@@ -136,6 +136,7 @@ jobs:
               try {
                 const data  = await httpGet(`https://api.thingspeak.com/channels/${channelId}/feeds.json?results=500`);
                 const feeds = data.feeds.filter(f => f.field1 && !isNaN(parseFloat(f.field1)));
+                const channelName = data.channel?.name || channelId;
                 if (!feeds.length) { console.log('  Δεν υπάρχουν δεδομένα'); continue; }
 
                 const latest    = feeds[feeds.length - 1];
@@ -169,9 +170,9 @@ jobs:
                   const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
                   const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
                   const timeStr = new Date(latestTs).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Athens' });
-                  const notifBody = `${weightNow.toFixed(3)} kg •• ${diffFromPrevStr} •• Ώρα:${timeStr}`;
+                  const notifBody = `${weightNow.toFixed(3)} kg •• ${diffFromPrevStr} •• ${timeStr}`;
                   for (const t of tokens)
-                    await sendNotification(t, '📡 Νέα Δεδομένα', notifBody, accessToken);
+                    await sendNotification(t, `📡 Νέα Δεδομένα •• ${channelName}`, notifBody, accessToken);
 
                   if (prev) {
                     const diffGrams = Math.round((weightNow - parseFloat(prev.field1)) * 1000);
@@ -179,7 +180,7 @@ jobs:
                       const sign = diffGrams >= 0 ? '+' : '';
                       console.log(`  ⚠️ Πτώση: ${sign}${diffGrams} gr`);
                       for (const t of tokens)
-                        await sendNotification(t, '⚠️ Πτώση Βάρους!', `${sign}${diffGrams} gr .. Κυψέλη ${channelId}`, accessToken);
+                        await sendNotification(t, '⚠️ Πτώση Βάρους!', `${sign}${diffGrams} gr  •  Κυψέλη ${channelId}`, accessToken);
                     }
                   }
                   newState.lastTimestamp = latestTs;
@@ -188,10 +189,10 @@ jobs:
                 if (batNow !== null && batNow < BAT_LOW_THRESHOLD && !state.batAlerted) {
                   console.log(`  🔋 Χαμηλή μπαταρία: ${batNow}v`);
                   for (const t of tokens)
-                    await sendNotification(t, '🔋 Χαμηλή Μπαταρία', `${batNow.toFixed(3)} v .. Κυψέλη ${channelId}`, accessToken);
+                    await sendNotification(t, '🔋 Χαμηλή Μπαταρία', `${batNow.toFixed(3)} v  •  Κυψέλη ${channelId}`, accessToken);
                   newState.batAlerted = true;
                 }
-                if (batNow === null || batNow >= BAT_LOW_THRESHOLD) newState.batAlerted = false;
+                if (batNow !== null && batNow >= BAT_LOW_THRESHOLD) newState.batAlerted = false;
 
                 await saveState(channelId, newState, accessToken);
                 console.log('  ✅ State OK');
