@@ -86,8 +86,8 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 /* ── CHANNEL SWITCH PILL ── */
 .channel-switch-bar { display: none; background: #c8c8c8; padding: 8px 16px; border-bottom: 1px solid #b0b0b0; justify-content: center; align-items: center; gap: 10px; }
 .channel-switch-bar.visible { display: flex; }
-.ch-pill { display: flex; background: #b0b0b0; border-radius: 20px; overflow: hidden; }
-.ch-pill-btn { padding: 6px 20px; font-size: 14px; font-weight: 700; color: #555; border: none; background: transparent; cursor: pointer; transition: background 0.2s, color 0.2s; border-radius: 20px; }
+.ch-pill { display: flex; background: #b0b0b0; border-radius: 20px; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+.ch-pill-btn { padding: 6px 16px; font-size: 13px; font-weight: 700; color: #555; border: none; background: transparent; cursor: pointer; transition: background 0.2s, color 0.2s; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
 .ch-pill-btn.active { background: #333; color: #fff; }
 .ch-switch-label { font-size: 12px; color: #666; font-weight: 600; }
 
@@ -373,10 +373,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     </div>
     <div class="channel-switch-bar" id="channel-switch-bar">
       <span class="ch-switch-label">Κυψέλη:</span>
-      <div class="ch-pill">
-        <button class="ch-pill-btn" id="pill-0" onclick="switchChannel(0)">No 1</button>
-        <button class="ch-pill-btn" id="pill-1" onclick="switchChannel(1)">No 2</button>
-      </div>
+      <div class="ch-pill" id="ch-pill-container"></div>
     </div>
   </div>
 
@@ -714,10 +711,10 @@ function confirmAction(yes) {
 function parseChannels(str) { return str.split(';').map(s => s.trim()).filter(Boolean); }
 
 // NOTE: fetchCSV returns the full object from Apps Script JSONP.
-// The Apps Script must return: { username: { password, channel, expiredDate, simSN, tareG, tareH, warning } }
-// Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN, G=tareG, H=tareH, I=warning
-// Το πεδίο "warning" μπορεί να περιέχει είτε ένα μήνυμα, είτε πολλά χωρισμένα με ';'
-// (ένα ανά ζυγαριά/κανάλι, στην ίδια σειρά με τη στήλη C).
+// The Apps Script must return: { username: { password, channel, expiredDate, simSN, tare, warning } }
+// Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN, G=tare, I=warning
+// Τα C, D, E, G, I μπορούν να περιέχουν 1+ τιμές χωρισμένες με ';' — μία ανά ζυγαριά/κανάλι, στην ίδια σειρά.
+// Υποστηρίζονται όσα κανάλια χρειάζεται (2, 3, 4, ...), όχι μόνο 2.
 
 // ── LOGIN ──
 async function doLogin() {
@@ -771,7 +768,7 @@ function enterApp() {
   const display = USER_DISPLAY[currentUser] || { name: currentUser, badge: '—' };
   document.getElementById('hdr-name').textContent = display.name;
   document.getElementById('hdr-badge').textContent = CHANNELS.length >= 2 ? 'No ' + (activeChannelIndex + 1) : display.badge;
-  if (CHANNELS.length >= 2) { document.getElementById('channel-switch-bar').classList.add('visible'); updatePills(); }
+  if (CHANNELS.length >= 2) { document.getElementById('channel-switch-bar').classList.add('visible'); renderPills(); updatePills(); }
   else { document.getElementById('channel-switch-bar').classList.remove('visible'); }
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -791,9 +788,18 @@ function switchChannel(idx) {
   updatePills(); restoreTare(); restoreNotes(); loadData(); populateInfoTab();
   window.scrollTo(0, 0);
 }
+// Φτιάχνει δυναμικά ένα pill-κουμπί ανά κανάλι (2, 3, 4... όσα έχει ο χρήστης)
+function renderPills() {
+  const container = document.getElementById('ch-pill-container');
+  container.innerHTML = CHANNELS.map((ch, i) =>
+    `<button class="ch-pill-btn" id="pill-${i}" onclick="switchChannel(${i})">No ${i + 1}</button>`
+  ).join('');
+}
 function updatePills() {
-  document.getElementById('pill-0').classList.toggle('active', activeChannelIndex === 0);
-  document.getElementById('pill-1').classList.toggle('active', activeChannelIndex === 1);
+  CHANNELS.forEach((ch, i) => {
+    const el = document.getElementById('pill-' + i);
+    if (el) el.classList.toggle('active', activeChannelIndex === i);
+  });
 }
 
 // ── TAB SWITCHING ──
@@ -872,6 +878,21 @@ function diffStr(val, ref) {
 
 function tareKey(type) { return `tare_${type}_${currentUser}_ch${activeChannelIndex}`; }
 function notesKey() { return `notes_${currentUser}_ch${activeChannelIndex}`; }
+
+// ── TARE ανά κανάλι (υποστηρίζει όσα κανάλια έχει ο χρήστης: 2, 3, 4...) ──
+// Στο sheet, όλα τα TARE μιας γραμμής είναι σε ΕΝΑ κελί (G), χωρισμένα με ';',
+// στη ίδια θέση/σειρά με τα κανάλια της στήλης C.
+function getChannelTare(idx) {
+  if (!userRow || !userRow.tare) return '';
+  return userRow.tare.split(';')[idx] || '';
+}
+function setChannelTare(idx, value) {
+  if (!userRow) return;
+  const parts = (userRow.tare || '').split(';');
+  while (parts.length <= idx) parts.push('');
+  parts[idx] = value;
+  userRow.tare = parts.join(';');
+}
 
 function doRefresh() {
   const btn = document.getElementById('refresh-btn');
@@ -1347,7 +1368,7 @@ function doTare() {
   // Αποθήκευση στο Google Sheet (στήλη G/H) ώστε να υπάρχει backup αν αλλάξει συσκευή
   const sheetValue = tareWeight.toFixed(3) + ' kg - ' + fmtDate(tareDate);
   saveTareToSheet(sheetValue);
-  if (userRow) { if (activeChannelIndex === 1) userRow.tareH = sheetValue; else userRow.tareG = sheetValue; }
+  if (userRow) setChannelTare(activeChannelIndex, sheetValue);
 }
 function doClear() {
   if (tareWeight === null) return;
@@ -1359,7 +1380,7 @@ function doClear() {
     document.getElementById('tare-ref').textContent = 'Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος';
     document.getElementById('btn-tare').disabled = false;
     clearTareFromSheet();
-    if (userRow) { if (activeChannelIndex === 1) userRow.tareH = ''; else userRow.tareG = ''; }
+    if (userRow) setChannelTare(activeChannelIndex, '');
   });
 }
 function updateTareDiff(currentWeight) {
@@ -1395,7 +1416,7 @@ function restoreTare() {
     return;
   }
   // Δεν υπάρχει τοπικά (π.χ. νέα συσκευή / διαγραφή εφαρμογής) -> ανάκτηση από το Google Sheet
-  const sheetVal = userRow ? (activeChannelIndex === 1 ? userRow.tareH : userRow.tareG) : '';
+  const sheetVal = getChannelTare(activeChannelIndex);
   const parsed = parseSheetTareValue(sheetVal);
   if (parsed) {
     tareWeight = parsed.weight; tareDate = parsed.dateISO;
