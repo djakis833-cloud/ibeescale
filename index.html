@@ -876,7 +876,6 @@ function diffStr(val, ref) {
   return { text: `${sign}${grams} gr`, cls: grams >= 0 ? 'diff-pos' : 'diff-neg' };
 }
 
-function tareKey(type) { return `tare_${type}_${currentUser}_ch${activeChannelIndex}`; }
 function notesKey() { return `notes_${currentUser}_ch${activeChannelIndex}`; }
 
 // ── TARE ανά κανάλι (υποστηρίζει όσα κανάλια έχει ο χρήστης: 2, 3, 4...) ──
@@ -1361,11 +1360,9 @@ function doTare() {
   if (!allFeeds.length) { showAlert('Σφάλμα', 'Δεν υπάρχουν δεδομένα ακόμα', ''); return; }
   const latest = allFeeds[allFeeds.length - 1];
   tareWeight = parseFloat(latest.field1); tareDate = latest.created_at;
-  localStorage.setItem(tareKey('weight'), tareWeight);
-  localStorage.setItem(tareKey('date'), tareDate);
   document.getElementById('btn-tare').disabled = true;
   updateTareDiff(tareWeight);
-  // Αποθήκευση στο Google Sheet (στήλη G/H) ώστε να υπάρχει backup αν αλλάξει συσκευή
+  // Αποθήκευση ΜΟΝΟ στο Google Sheet (στήλη G) - όχι τοπικά στο κινητό
   const sheetValue = tareWeight.toFixed(3) + ' kg - ' + fmtDate(tareDate);
   saveTareToSheet(sheetValue);
   if (userRow) setChannelTare(activeChannelIndex, sheetValue);
@@ -1375,7 +1372,6 @@ function doClear() {
   showConfirm('Θέλετε να διαγραφεί η μέτρηση;', yes => {
     if (!yes) return;
     tareWeight = null; tareDate = null;
-    localStorage.removeItem(tareKey('weight')); localStorage.removeItem(tareKey('date'));
     document.getElementById('tare-diff').textContent = '—';
     document.getElementById('tare-ref').textContent = 'Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος';
     document.getElementById('btn-tare').disabled = false;
@@ -1408,20 +1404,11 @@ function restoreTare() {
   document.getElementById('tare-diff').textContent = '—';
   document.getElementById('tare-ref').textContent = 'Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος';
   document.getElementById('btn-tare').disabled = false;
-  const tw = localStorage.getItem(tareKey('weight')), td = localStorage.getItem(tareKey('date'));
-  if (tw && td) {
-    tareWeight = parseFloat(tw); tareDate = td;
-    document.getElementById('btn-tare').disabled = true;
-    document.getElementById('tare-ref').textContent = 'Ref: ' + tareWeight.toFixed(3) + ' kg  (' + fmtDate(tareDate) + ')';
-    return;
-  }
-  // Δεν υπάρχει τοπικά (π.χ. νέα συσκευή / διαγραφή εφαρμογής) -> ανάκτηση από το Google Sheet
+  // Πηγή αλήθειας: ΜΟΝΟ η στήλη G του Google Sheet - καθόλου τοπική αποθήκευση στο κινητό
   const sheetVal = getChannelTare(activeChannelIndex);
   const parsed = parseSheetTareValue(sheetVal);
   if (parsed) {
     tareWeight = parsed.weight; tareDate = parsed.dateISO;
-    localStorage.setItem(tareKey('weight'), tareWeight);
-    localStorage.setItem(tareKey('date'), tareDate);
     document.getElementById('btn-tare').disabled = true;
     document.getElementById('tare-ref').textContent = 'Ref: ' + tareWeight.toFixed(3) + ' kg  (' + fmtDate(tareDate) + ')';
   }
