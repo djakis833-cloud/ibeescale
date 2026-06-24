@@ -657,20 +657,23 @@ function clearLoginWarnings() {
   activeLoginWarning = null;
   if (loginWarningTimer) { clearTimeout(loginWarningTimer); loginWarningTimer = null; }
 }
-function queueLoginWarnings(rawWarning, channels) {
-  const raw = (rawWarning || '').trim();
-  if (!raw) return;
-  const parts = raw.split(';').map(s => s.trim());
+function queueLoginWarnings(rawWarning, channels, extraItems) {
   const items = [];
-  if (channels.length >= 2 && parts.length === channels.length) {
-    // Διαφορετικό μήνυμα ανά ζυγαριά/κανάλι, στη ίδια σειρά με τη στήλη C
-    parts.forEach((w, idx) => {
-      if (w) items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ – Ζυγαριά Νο ' + (idx + 1), msg: w });
-    });
-  } else if (parts.some(p => p)) {
-    // Ένα γενικό μήνυμα (χωρίς ';' ή με αριθμό μηνυμάτων που δεν ταιριάζει με τα κανάλια)
-    items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ', msg: raw });
+  if (Array.isArray(extraItems) && extraItems.length) items.push(...extraItems);
+  const raw = (rawWarning || '').trim();
+  if (raw) {
+    const parts = raw.split(';').map(s => s.trim());
+    if (channels.length >= 2 && parts.length === channels.length) {
+      // Διαφορετικό μήνυμα ανά ζυγαριά/κανάλι, στη ίδια σειρά με τη στήλη C
+      parts.forEach((w, idx) => {
+        if (w) items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ – Ζυγαριά Νο ' + (idx + 1), msg: w });
+      });
+    } else if (parts.some(p => p)) {
+      // Ένα γενικό μήνυμα (χωρίς ';' ή με αριθμό μηνυμάτων που δεν ταιριάζει με τα κανάλια)
+      items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ', msg: raw });
+    }
   }
+  if (!items.length) return;
   loginWarningQueue = items;
   processNextLoginWarning();
 }
@@ -743,8 +746,19 @@ async function doLogin() {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       }
       // ── Προειδοποιητικό(ά) μήνυμα(τα) από το κελί I (στήλη "warning") του χρήστη ──
+      // + Έλεγχος: αν ο χρήστης έχει ενεργοποιημένες Ειδοποιήσεις αλλά ο αριθμός ζυγαριών
+      // άλλαξε (προστέθηκε/αφαιρέθηκε) από τότε, προειδοποίησέ τον να τις απενεργοποιήσει/ενεργοποιήσει ξανά.
       clearLoginWarnings();
-      queueLoginWarnings(user.warning, CHANNELS);
+      const extraWarningItems = [];
+      try {
+        if (window.checkChannelMismatch) {
+          const mismatchMsg = await window.checkChannelMismatch(currentUser, CHANNELS);
+          if (mismatchMsg) {
+            extraWarningItems.push({ title: '⚠️ ΕΙΔΟΠΟΙΗΣΕΙΣ – Απαιτείται Ενέργεια', msg: mismatchMsg });
+          }
+        }
+      } catch (e) { console.warn('Σφάλμα ελέγχου ζυγαριών/ειδοποιήσεων:', e.message); }
+      queueLoginWarnings(user.warning, CHANNELS, extraWarningItems);
     } else {
       errEl.textContent = 'Λάθος username ή password';
       document.getElementById('inp-pass').value = '';
@@ -1589,6 +1603,29 @@ window.refreshNotifButtonState = function() {
   if (info) info.textContent = isEnabledForThisUser ? '✅ Ενεργοποιημένες' : '';
 };
 window.addEventListener('load', () => window.refreshNotifButtonState());
+
+// ── Έλεγχος αναντιστοιχίας καναλιών (ζυγαριών) σε σχέση με ό,τι έχει αποθηκευτεί στο Firestore ──
+// Όταν ενεργοποιούνται οι ειδοποιήσεις, αποθηκεύουμε στο fcm_tokens το ΣΤΙΓΜΙΑΙΟ array CHANNELS του χρήστη.
+// Αν αργότερα προστεθεί ή αφαιρεθεί ζυγαριά στο Google Sheet, το Firestore ΔΕΝ ενημερώνεται μόνο του,
+// οπότε οι ειδοποιήσεις θα συνεχίσουν να αφορούν τα ΠΑΛΙΑ κανάλια. Ελέγχουμε αυτό στο login και
+// προειδοποιούμε τον χρήστη να κάνει Απενεργοποίηση + Ενεργοποίηση των ειδοποιήσεων ξανά.
+window.checkChannelMismatch = async function(user, channels) {
+  try {
+    if (!user) return null;
+    const q = query(collection(db, 'fcm_tokens'), where('user', '==', user));
+    const snap = await getDocs(q);
+    if (snap.empty) return null; // δεν έχει ενεργοποιημένες ειδοποιήσεις αυτή τη στιγμή -> δεν χρειάζεται έλεγχος
+    const storedChannels = snap.docs[0].data().channels || [];
+    const a = [...storedChannels].map(String).sort();
+    const b = [...(channels || [])].map(String).sort();
+    const same = a.length === b.length && a.every((v, i) => v === b[i]);
+    if (same) return null;
+    return 'Παρατηρήθηκε αλλαγή στον αριθμό των ζυγαριών σας (προστέθηκε ή αφαιρέθηκε ζυγαριά) από τότε που ενεργοποιήσατε τις Ειδοποιήσεις.\n\nΓια να λαμβάνετε σωστά ειδοποιήσεις για ΟΛΕΣ τις ζυγαριές σας, παρακαλούμε:\n\n1) Κάντε Απενεργοποίηση Ειδοποιήσεων\n2) Στη συνέχεια κάντε ξανά Ενεργοποίηση Ειδοποιήσεων\n\n(στην καρτέλα «Πληροφορίες»).';
+  } catch (e) {
+    console.warn('checkChannelMismatch error:', e.message);
+    return null;
+  }
+};
 </script>
 </body>
 </html>
