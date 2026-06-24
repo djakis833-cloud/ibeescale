@@ -680,7 +680,10 @@ function queueLoginWarnings(rawWarning, channels, extraItems) {
 function processNextLoginWarning() {
   if (!loginWarningQueue.length) { activeLoginWarning = null; return; }
   const next = loginWarningQueue.shift();
-  showLoginWarning(next.title, next.msg, LOGIN_WARNING_EXTRA_REPEATS);
+  // Κάθε στοιχείο της ουράς μπορεί να ορίσει δικό του αριθμό επαναλήψεων (π.χ. 0 = μία φορά μόνο).
+  // Αν δεν οριστεί, ισχύει η προεπιλεγμένη συμπεριφορά (6 εμφανίσεις συνολικά).
+  const repeats = (typeof next.repeats === 'number') ? next.repeats : LOGIN_WARNING_EXTRA_REPEATS;
+  showLoginWarning(next.title, next.msg, repeats);
 }
 function showLoginWarning(title, msg, repeatsLeft) {
   activeLoginWarning = { title, msg, repeatsLeft };
@@ -754,7 +757,7 @@ async function doLogin() {
         if (window.checkChannelMismatch) {
           const mismatchMsg = await window.checkChannelMismatch(currentUser, CHANNELS);
           if (mismatchMsg) {
-            extraWarningItems.push({ title: '⚠️ ΕΙΔΟΠΟΙΗΣΕΙΣ – Απαιτείται Ενέργεια', msg: mismatchMsg });
+            extraWarningItems.push({ title: '⚠️ ΕΙΔΟΠΟΙΗΣΕΙΣ – Απαιτείται Ενέργεια', msg: mismatchMsg, repeats: 0 });
           }
         }
       } catch (e) { console.warn('Σφάλμα ελέγχου ζυγαριών/ειδοποιήσεων:', e.message); }
