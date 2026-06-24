@@ -639,7 +639,65 @@ function showAlert(title, msg, detail) {
   document.getElementById('alert-detail').textContent = detail || '';
   document.getElementById('alert-overlay').classList.add('visible');
 }
-function dismissAlert() { document.getElementById('alert-overlay').classList.remove('visible'); }
+function dismissAlert() {
+  document.getElementById('alert-overlay').classList.remove('visible');
+  // Αν το alert που μόλις κλείσαμε ήταν login-warning, χειρίσου την επανάληψη/ουρά
+  if (activeLoginWarning) handleLoginWarningDismiss();
+}
+
+// ── LOGIN WARNING QUEUE (κελί I) ──
+// Κάθε μήνυμα (ανά ζυγαριά, αν υπάρχουν πολλές) εμφανίζεται, και μόλις ο χρήστης πατήσει
+// "Κατάλαβα" ξαναεμφανίζεται μετά από 10 δευτ., για ακόμα 5 φορές (σύνολο 6 εμφανίσεις),
+// πριν προχωρήσει στο επόμενο μήνυμα της ουράς (αν υπάρχει).
+const LOGIN_WARNING_REPEAT_DELAY_MS = 10000;
+const LOGIN_WARNING_EXTRA_REPEATS   = 5;
+let loginWarningQueue = [];
+let activeLoginWarning = null; // { title, msg, repeatsLeft }
+let loginWarningTimer = null;
+
+function clearLoginWarnings() {
+  loginWarningQueue = [];
+  activeLoginWarning = null;
+  if (loginWarningTimer) { clearTimeout(loginWarningTimer); loginWarningTimer = null; }
+}
+function queueLoginWarnings(rawWarning, channels) {
+  const raw = (rawWarning || '').trim();
+  if (!raw) return;
+  const parts = raw.split(';').map(s => s.trim());
+  const items = [];
+  if (channels.length >= 2 && parts.length === channels.length) {
+    // Διαφορετικό μήνυμα ανά ζυγαριά/κανάλι, στη ίδια σειρά με τη στήλη C
+    parts.forEach((w, idx) => {
+      if (w) items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ – Ζυγαριά Νο ' + (idx + 1), msg: w });
+    });
+  } else if (parts.some(p => p)) {
+    // Ένα γενικό μήνυμα (χωρίς ';' ή με αριθμό μηνυμάτων που δεν ταιριάζει με τα κανάλια)
+    items.push({ title: 'ΕΙΔΟΠΟΙΗΣΗ', msg: raw });
+  }
+  loginWarningQueue = items;
+  processNextLoginWarning();
+}
+function processNextLoginWarning() {
+  if (!loginWarningQueue.length) { activeLoginWarning = null; return; }
+  const next = loginWarningQueue.shift();
+  showLoginWarning(next.title, next.msg, LOGIN_WARNING_EXTRA_REPEATS);
+}
+function showLoginWarning(title, msg, repeatsLeft) {
+  activeLoginWarning = { title, msg, repeatsLeft };
+  showAlert(title, msg);
+}
+function handleLoginWarningDismiss() {
+  const w = activeLoginWarning;
+  activeLoginWarning = null;
+  if (w.repeatsLeft > 0) {
+    loginWarningTimer = setTimeout(() => {
+      loginWarningTimer = null;
+      showLoginWarning(w.title, w.msg, w.repeatsLeft - 1);
+    }, LOGIN_WARNING_REPEAT_DELAY_MS);
+  } else {
+    processNextLoginWarning(); // πέρασε στο επόμενο μήνυμα της ουράς, αν υπάρχει
+  }
+}
 
 // ── CONFIRM ──
 function showConfirm(msg, cb) {
@@ -658,6 +716,8 @@ function parseChannels(str) { return str.split(';').map(s => s.trim()).filter(Bo
 // NOTE: fetchCSV returns the full object from Apps Script JSONP.
 // The Apps Script must return: { username: { password, channel, expiredDate, simSN, tareG, tareH, warning } }
 // Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN, G=tareG, H=tareH, I=warning
+// Το πεδίο "warning" μπορεί να περιέχει είτε ένα μήνυμα, είτε πολλά χωρισμένα με ';'
+// (ένα ανά ζυγαριά/κανάλι, στην ίδια σειρά με τη στήλη C).
 
 // ── LOGIN ──
 async function doLogin() {
@@ -685,10 +745,9 @@ async function doLogin() {
       } else {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       }
-      // ── Προειδοποιητικό μήνυμα από το κελί I (στήλη "warning") του χρήστη ──
-      if (user.warning && user.warning.trim()) {
-        showAlert('ΕΙΔΟΠΟΙΗΣΗ', user.warning.trim());
-      }
+      // ── Προειδοποιητικό(ά) μήνυμα(τα) από το κελί I (στήλη "warning") του χρήστη ──
+      clearLoginWarnings();
+      queueLoginWarnings(user.warning, CHANNELS);
     } else {
       errEl.textContent = 'Λάθος username ή password';
       document.getElementById('inp-pass').value = '';
@@ -752,6 +811,7 @@ function doLogout() {
   CHANNEL = ''; currentUser = ''; CHANNELS = []; allFeeds = []; graphFeeds = []; activeChannelIndex = 0;
   userRow = null; tareWeight = null; tareDate = null;
   alertShownForSession = false; alertBatShown = false; window._simAlertShown = false;
+  clearLoginWarnings();
   window.currentUser = ''; window.CHANNELS = [];
   if (window.refreshNotifButtonState) window.refreshNotifButtonState(); // ξεκαθαρίζει τα κουμπιά ειδοποιήσεων για τον επόμενο χρήστη
   if (myChart) { myChart.destroy(); myChart = null; }
