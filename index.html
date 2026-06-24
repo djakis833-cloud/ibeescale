@@ -656,8 +656,8 @@ function confirmAction(yes) {
 function parseChannels(str) { return str.split(';').map(s => s.trim()).filter(Boolean); }
 
 // NOTE: fetchCSV returns the full object from Apps Script JSONP.
-// The Apps Script must return: { username: { password, channel, expiredDate, simSN } }
-// Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN
+// The Apps Script must return: { username: { password, channel, expiredDate, simSN, tareG, tareH, warning } }
+// Apps Script should read: A=username, B=password, C=channel, D=expiredDate, E=simSN, G=tareG, H=tareH, I=warning
 
 // ── LOGIN ──
 async function doLogin() {
@@ -684,6 +684,10 @@ async function doLogin() {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
       } else {
         CHANNEL = CHANNELS[0]; activeChannelIndex = 0; enterApp();
+      }
+      // ── Προειδοποιητικό μήνυμα από το κελί I (στήλη "warning") του χρήστη ──
+      if (user.warning && user.warning.trim()) {
+        showAlert('ΕΙΔΟΠΟΙΗΣΗ', user.warning.trim());
       }
     } else {
       errEl.textContent = 'Λάθος username ή password';
