@@ -886,11 +886,15 @@ function fmtTimeOnly(iso) {
   return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0')
     + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
+// Μορφοποιεί τα γραμμάρια με τελεία χιλιάδων (π.χ. -30540 -> -30.540 gr)
+function fmtSignedGrams(grams) {
+  const sign = grams >= 0 ? '+' : '-';
+  return sign + Math.abs(grams).toLocaleString('el-GR') + ' gr';
+}
 function diffStr(val, ref) {
   if (ref === null || isNaN(val) || isNaN(ref)) return { text: '—', cls: '' };
   const grams = Math.round((val - ref) * 1000);
-  const sign = grams >= 0 ? '+' : '';
-  return { text: `${sign}${grams} gr`, cls: grams >= 0 ? 'diff-pos' : 'diff-neg' };
+  return { text: fmtSignedGrams(grams), cls: grams >= 0 ? 'diff-pos' : 'diff-neg' };
 }
 
 function notesKey() { return `notes_${currentUser}_ch${activeChannelIndex}`; }
@@ -982,8 +986,7 @@ function updateUI() {
     const diffTimeEl = document.getElementById('prev-weight-diff-time');
     if (prevPrev) {
       const grams = Math.round((parseFloat(prev.field1) - parseFloat(prevPrev.field1)) * 1000);
-      const sign = grams >= 0 ? '+' : '';
-      diffEl.textContent = sign + grams + ' gr';
+      diffEl.textContent = fmtSignedGrams(grams);
       diffEl.style.color = grams >= 0 ? '#1a7a1a' : '#cc1a1a';
       diffEl.style.display = 'inline';
       diffTimeEl.textContent = fmtTimeOnly(prevPrev.created_at);
@@ -1399,8 +1402,7 @@ function doClear() {
 function updateTareDiff(currentWeight) {
   if (tareWeight === null) return;
   const grams = Math.round((currentWeight - tareWeight) * 1000);
-  const sign = grams >= 0 ? '+' : '';
-  document.getElementById('tare-diff').textContent = `${sign}${grams} gr`;
+  document.getElementById('tare-diff').textContent = fmtSignedGrams(grams);
   document.getElementById('tare-ref').textContent = tareDate
     ? ' ' + tareWeight.toFixed(3) + ' kg  (' + fmtDate(tareDate) + ')'
     : ' ' + tareWeight.toFixed(3) + ' kg  (χειροκίνητη τιμή από το sheet)';
@@ -1516,8 +1518,7 @@ onMessage(messaging, payload => {
       const weightPrev = parseFloat(prev.field1);
       if (!isNaN(weightNow) && !isNaN(weightPrev)) {
         const grams = Math.round((weightNow - weightPrev) * 1000);
-        const sign  = grams >= 0 ? '+' : '';
-        body = weightNow.toFixed(3) + ' kg - ' + sign + grams + ' gr';
+        body = weightNow.toFixed(3) + ' kg - ' + fmtSignedGrams(grams);
       }
     }
   } catch(e) {}
