@@ -104,7 +104,12 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .diff-row b { font-size: 18px; font-weight: 700; }
 .diff-pos { color: #1a7a1a; }
 .diff-neg { color: #cc1a1a; }
-.last-time { font-size: 13px; color: #444; margin-top: 6px; font-weight: 600; }
+.last-time { font-size: 13px; color: #444; font-weight: 600; }
+.last-time-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.conn-badge { display: none; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 10px; line-height: 1.5; white-space: nowrap; }
+.conn-badge.conn-wifi { background: #dbf0ff; color: #0a5fa0; border: 1px solid #8fcdf2; }
+.conn-badge.conn-gsm { background: #fdebc8; color: #8a5800; border: 1px solid #f0c878; }
+.conn-badge-sm { font-size: 9px; padding: 1px 6px; margin-top: 3px; }
 .sensors-card { background: #d8d8d8; margin: 8px 8px 0; border-radius: 10px; padding: 14px 16px; }
 .sensor-icon { font-size: 28px; width: 36px; text-align: center; }
 .sensor-value { font-size: 24px; font-weight: 700; color: #111; }
@@ -389,7 +394,10 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       </div>
       <div class="diff-row">Διαφορά Ημέρας : <b><span id="diff-day" class="diff-pos" style="font-size:22px;">—</span></b></div>
       <div class="diff-row" style="display:none;">Διαφορά Προηγ. Μέτρησης : <b><span id="diff-prev-hidden" class="diff-pos">—</span></b></div>
-      <div class="last-time" id="last-time">Τελευταία μέτρηση: —</div>
+      <div class="last-time-row">
+        <div class="last-time" id="last-time">Τελευταία μέτρηση: —</div>
+        <span class="conn-badge" id="conn-badge-last"></span>
+      </div>
     </div>
     <div class="sensors-card">
       <div class="sensor-row-double">
@@ -421,14 +429,17 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
                 <span id="prev-weight-diff" style="font-weight:700;font-size:13px;display:none;white-space:nowrap;"></span>
               </div>
               <div class="prev-item-time" id="prev-weight-time"></div>
+              <span class="conn-badge conn-badge-sm" id="conn-badge-prev-weight"></span>
             </div>
             <div id="prev-weight-diff-wrap" class="prev-weight-box" style="display:none;">
               <div class="prev-item-val" id="prev-prevprev-weight">—</div>
               <div id="prev-weight-diff-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
+              <span class="conn-badge conn-badge-sm" id="conn-badge-prevprev-weight"></span>
             </div>
             <div id="prev-weight-p3-wrap" class="prev-weight-box" style="display:none;">
               <div class="prev-item-val" id="prev-p3-weight">—</div>
               <div id="prev-p3-weight-time" style="color:#aaa;font-size:12px;margin-top:1px;"></div>
+              <span class="conn-badge conn-badge-sm" id="conn-badge-p3-weight"></span>
             </div>
           </div>
         </div>
@@ -616,6 +627,33 @@ const CHANNEL_FIELD_MAPS = {
 };
 function getFieldMap() {
   return CHANNEL_FIELD_MAPS[CHANNEL] || DEFAULT_FIELD_MAP;
+}
+
+// ── Τύπος σύνδεσης αποστολής (field6): 11 = WiFi, 22 = GSM ──
+// Εξαίρεση: στο κανάλι nalban (406938) το field6 χρησιμοποιείται ήδη ως μπαταρία,
+// οπότε εκεί δεν εμφανίζουμε badge σύνδεσης.
+function isConnField6Available() {
+  return getFieldMap().bat !== 'field6';
+}
+function connInfo(feed) {
+  if (!feed || !isConnField6Available()) return null;
+  const v = String(feed.field6 || '').trim();
+  if (v === '11') return { icon: '📶', text: 'WiFi', cls: 'conn-wifi' };
+  if (v === '22') return { icon: '📡', text: 'GSM', cls: 'conn-gsm' };
+  return null;
+}
+function setConnBadge(elId, feed) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const info = connInfo(feed);
+  if (info) {
+    el.textContent = info.icon + ' ' + info.text;
+    el.className = el.className.replace(/\bconn-wifi\b|\bconn-gsm\b/g, '').trim() + ' ' + info.cls;
+    el.style.display = 'inline-flex';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
 }
 
 // ── STATE ──
@@ -844,6 +882,7 @@ function doLogout() {
     const el = document.getElementById(id);
     if (el) el.textContent = id === 'last-time' ? 'Τελευταία μέτρηση: —' : '—';
   });
+  ['conn-badge-last','conn-badge-prev-weight','conn-badge-prevprev-weight','conn-badge-p3-weight'].forEach(id => setConnBadge(id, null));
   document.getElementById('tare-ref').textContent = 'Πατήστε TARE για να αποθηκεύσετε το τρέχον βάρος';
   document.getElementById('btn-tare').disabled = false;
   document.getElementById('channel-switch-bar').classList.remove('visible');
@@ -975,10 +1014,12 @@ function updateUI() {
 
   document.getElementById('weight-main').textContent = weightNow.toFixed(3) + ' kg';
   document.getElementById('last-time').textContent = 'Τελευταία μέτρηση: ' + fmtDate(latest.created_at);
+  setConnBadge('conn-badge-last', latest);
 
   if (prev) {
     document.getElementById('prev-weight').textContent = parseFloat(prev.field1).toFixed(3) + ' kg';
     document.getElementById('prev-weight-time').textContent = fmtTimeOnly(prev.created_at);
+    setConnBadge('conn-badge-prev-weight', prev);
     // Διαφορά βάρους prev vs prev-prev
     const prevPrev = allFeeds.length >= 3 ? allFeeds[allFeeds.length - 3] : null;
     const diffWrap = document.getElementById('prev-weight-diff-wrap');
@@ -990,6 +1031,7 @@ function updateUI() {
       diffEl.style.color = grams >= 0 ? '#1a7a1a' : '#cc1a1a';
       diffEl.style.display = 'inline';
       diffTimeEl.textContent = fmtTimeOnly(prevPrev.created_at);
+      setConnBadge('conn-badge-prevprev-weight', prevPrev);
       document.getElementById('prev-prevprev-weight').textContent = parseFloat(prevPrev.field1).toFixed(3) + ' kg';
       diffWrap.style.display = 'block';
       // Τρίτο προηγούμενο βάρος (allFeeds[-4])
@@ -998,6 +1040,7 @@ function updateUI() {
       if (p3) {
         document.getElementById('prev-p3-weight').textContent = parseFloat(p3.field1).toFixed(3) + ' kg';
         document.getElementById('prev-p3-weight-time').textContent = fmtTimeOnly(p3.created_at);
+        setConnBadge('conn-badge-p3-weight', p3);
         p3Wrap.style.display = 'block';
       } else {
         p3Wrap.style.display = 'none';
@@ -1005,11 +1048,14 @@ function updateUI() {
     } else {
       diffEl.style.display = 'none';
       diffWrap.style.display = 'none';
+      setConnBadge('conn-badge-prevprev-weight', null);
+      setConnBadge('conn-badge-p3-weight', null);
       document.getElementById('prev-weight-p3-wrap').style.display = 'none';
     }
   } else {
     document.getElementById('prev-weight').textContent = '—';
     document.getElementById('prev-weight-time').textContent = '';
+    setConnBadge('conn-badge-prev-weight', null);
     document.getElementById('prev-weight-diff-wrap').style.display = 'none';
   }
 
