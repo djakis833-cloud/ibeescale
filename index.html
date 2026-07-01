@@ -2,6 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
+<script>(function(){try{if(localStorage.getItem('darkMode')==='1'){document.documentElement.classList.add('dark-mode');}}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Ζυγαριά Κυψέλης</title>
 <link rel="manifest" href="manifest.json">
@@ -70,18 +71,23 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .nav-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── HEADER ── */
-.header { background: #d0d0d0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b0b0b0; }
-.header-title { font-size: 22px; font-weight: 700; }
+.header { background: #d0d0d0; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b0b0b0; gap: 8px; }
+.header-title { font-size: 20px; font-weight: 700; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .header-title span.blue { color: #1a6dcc; }
 .header-title span.black { color: #111; }
-.badge { background: #333; color: #fff; font-size: 16px; font-weight: 700; padding: 4px 12px; border-radius: 6px; }
-.header-right { display: flex; align-items: center; gap: 8px; }
+.badge { background: #333; color: #fff; font-size: 14px; font-weight: 700; padding: 4px 9px; border-radius: 6px; flex-shrink: 0; white-space: nowrap; }
+.header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .top-bar-sticky { position: sticky; top: 0; z-index: 500; }
-.refresh-top { background: none; border: none; font-size: 24px; cursor: pointer; color: #555; padding: 4px 8px; transition: transform 0.4s; }
+.refresh-top { background: none; border: none; font-size: 21px; cursor: pointer; color: #555; padding: 2px 4px; transition: transform 0.4s; flex-shrink: 0; }
 .refresh-top.spinning { animation: spin 0.6s linear; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.btn-logout { background: none; border: 1px solid #aaa; border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #555; cursor: pointer; font-weight: 600; }
+.btn-logout { background: none; border: 1px solid #aaa; border-radius: 6px; padding: 5px 8px; font-size: 11px; color: #555; cursor: pointer; font-weight: 600; flex-shrink: 0; white-space: nowrap; }
 .btn-logout:active { background: #ccc; }
+.theme-toggle-top { background: #333; border: none; border-radius: 50%; width: 27px; height: 27px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: background 0.2s, transform 0.15s; flex-shrink: 0; }
+.theme-toggle-top:active { transform: scale(0.9); background: #555; }
+.appearance-card { background: #ddd; margin: 0 8px 0; border-radius: 10px; padding: 4px 16px; }
+.appearance-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; gap: 10px; }
+.appearance-label { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #222; }
 
 /* ── CHANNEL SWITCH PILL ── */
 .channel-switch-bar { display: none; background: #c8c8c8; padding: 8px 16px; border-bottom: 1px solid #b0b0b0; justify-content: center; align-items: center; gap: 10px; }
@@ -272,6 +278,94 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .push-toast-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
 .push-toast-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
 .push-toast-msg { font-size: 13px; opacity: 0.85; line-height: 1.4; }
+/* ── DARK MODE ── */
+html.dark-mode body { background: #121212; color: #e6e6e6; }
+html.dark-mode .header { background: #1c1c1c; border-bottom-color: #333; }
+html.dark-mode .header-title span.black { color: #f0f0f0; }
+html.dark-mode .header-title span.blue { color: #4da3ff; }
+html.dark-mode .badge { background: #444; }
+html.dark-mode .refresh-top { color: #bbb; }
+html.dark-mode .btn-logout { border-color: #555; color: #ccc; }
+html.dark-mode .btn-logout:active { background: #333; }
+html.dark-mode .theme-toggle-top { background: #2a2a2a; }
+html.dark-mode .theme-toggle-top:active { background: #444; }
+html.dark-mode .channel-switch-bar { background: #1e1e1e; border-bottom-color: #333; }
+html.dark-mode .ch-pill { background: #2a2a2a; }
+html.dark-mode .ch-pill-btn { color: #bbb; }
+html.dark-mode .ch-pill-btn.active { background: #4a9e4a; color: #fff; }
+html.dark-mode .ch-switch-label { color: #999; }
+html.dark-mode .weight-card { background: #1a1a1a; border-bottom-color: #2e2e2e; }
+html.dark-mode .weight-value { color: #f5f5f5; }
+html.dark-mode .diff-row { color: #ddd; }
+html.dark-mode .diff-pos { color: #3ecf3e; }
+html.dark-mode .diff-neg { color: #ff5c5c; }
+html.dark-mode .last-time { color: #aaa; }
+html.dark-mode .sensors-card { background: #1e1e1e; }
+html.dark-mode .sensor-value { color: #f0f0f0; }
+html.dark-mode .trend-up { color: #3ecf3e; }
+html.dark-mode .trend-down { color: #ff5c5c; }
+html.dark-mode .trend-eq { color: #888; }
+html.dark-mode .toggle-row { color: #ddd; border-top-color: #333; }
+html.dark-mode .prev-panel { background: #1e1e1e; border-top-color: #333; }
+html.dark-mode .prev-title { color: #999; }
+html.dark-mode .prev-item { background: #262626; }
+html.dark-mode .prev-item-label { color: #999; }
+html.dark-mode .prev-item-val { color: #eee; }
+html.dark-mode .prev-item-time { color: #888; }
+html.dark-mode .prev-weight-box { border-color: #444; background: #232323; }
+html.dark-mode .tare-card { background: #1e1e1e; }
+html.dark-mode .btn-tare { background: #444; color: #eee; }
+html.dark-mode .btn-tare:disabled { background: #2a2a2a; color: #666; }
+html.dark-mode .tare-diff { color: #f0f0f0; }
+html.dark-mode .btn-clear { background: #333; }
+html.dark-mode .btn-clear:active { background: #555; }
+html.dark-mode .tare-ref { color: #999; }
+html.dark-mode .chart-card { background: #1a1a1a; }
+html.dark-mode .chart-title { color: #999; }
+html.dark-mode .loading-msg { color: #777; }
+html.dark-mode .info-section-title { color: #f0f0f0; background: #121212; border-top-color: #2e2e2e; }
+html.dark-mode .info-card { background: #1e1e1e; }
+html.dark-mode .info-row { border-bottom-color: #333; }
+html.dark-mode .info-row-label { color: #ddd; }
+html.dark-mode .info-row-val { color: #eee; }
+html.dark-mode .appearance-card { background: #1e1e1e; }
+html.dark-mode .appearance-label { color: #eee; }
+html.dark-mode .notes-textarea { background: #1a1a1a; border-color: #333; color: #eee; }
+html.dark-mode .btn-notes-clear { background: #333; }
+html.dark-mode .btn-notes-clear:active { background: #555; }
+html.dark-mode .notif-wrap { background: #1a1a1a; border-color: #333; }
+html.dark-mode .notif-desc { color: #aaa; }
+html.dark-mode .notif-info { color: #999; }
+html.dark-mode .graphs-header { background: #1c1c1c; border-bottom-color: #333; }
+html.dark-mode .graphs-range-label { color: #aaa; }
+html.dark-mode .range-mode-pill { background: #2a2a2a; }
+html.dark-mode .range-mode-btn { color: #bbb; }
+html.dark-mode .range-mode-btn.active { background: #4a9e4a; color: #fff; }
+html.dark-mode .range-input { background: #1a1a1a; border-color: #333; color: #eee; }
+html.dark-mode .range-label-sm { color: #999; }
+html.dark-mode .graph-toggles { background: #1e1e1e; border-bottom-color: #333; }
+html.dark-mode .gtoggle-label { color: #ddd; }
+html.dark-mode .graph-block { background: #1a1a1a; }
+html.dark-mode .graph-block-title { color: #999; }
+html.dark-mode .graph-loading { color: #777; }
+html.dark-mode .confirm-box { background: #232323; }
+html.dark-mode .confirm-msg { color: #eee; }
+html.dark-mode .btn-confirm-no { background: #333; color: #eee; }
+html.dark-mode .btn-confirm-no:active { background: #444; }
+html.dark-mode .alert-box { background: #232323; }
+html.dark-mode .alert-msg { color: #eee; }
+html.dark-mode .alert-detail { color: #999; }
+html.dark-mode #sim-toast { background: #232323; }
+html.dark-mode .sim-toast-msg.ok { color: #3ecf3e; }
+html.dark-mode .sim-toast-msg.err { color: #ff5c5c; }
+html.dark-mode #sim-status-banner.sim-ok { background: #1c3a1c; border-color: #4a9e4a; }
+html.dark-mode #sim-status-banner.sim-err { background: #3a1c1c; border-color: #cc1a1a; }
+html.dark-mode .sim-banner-text.ok { color: #6fe06f; }
+html.dark-mode .sim-banner-text.err { color: #ff8080; }
+html.dark-mode .info-row-val.expired { color: #ff5c5c; }
+html.dark-mode .info-row-val.expired-ok { color: #6fe06f; }
+html.dark-mode .expired-warn { background: #3a1c1c; color: #ff8080; }
+html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
 </style>
 </head>
 <body>
@@ -373,6 +467,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
       </div>
       <div class="badge" id="hdr-badge">—</div>
       <div class="header-right">
+        <button class="theme-toggle-top" id="theme-toggle-btn" onclick="toggleDarkMode()" title="Dark Mode">🌙</button>
         <button class="refresh-top" id="refresh-btn" onclick="doRefresh()" title="Ανανέωση">↻</button>
         <button class="btn-logout" onclick="doLogout()">Έξοδος</button>
       </div>
@@ -524,6 +619,14 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 
   <!-- ══ TAB: INFO ══ -->
   <div id="tab-info" class="tab-page">
+    <div class="info-section-title">Εμφάνιση</div>
+    <div class="appearance-card">
+      <div class="appearance-row">
+        <span class="appearance-label"><span class="gt-icon" id="theme-row-icon">🌙</span> Σκοτεινό Θέμα (Dark Mode)</span>
+        <label class="toggle"><input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
     <div class="info-section-title">Πληροφορίες</div>
     <div class="info-card">
       <div class="info-row"><span class="info-row-label">name :</span><span class="info-row-val" id="info-name">—</span></div>
@@ -637,6 +740,49 @@ function getFieldMap() {
 // ── Τύπος σύνδεσης αποστολής (field6): 11 = WiFi, 22 = GSM ──
 // Εξαίρεση: στο κανάλι nalban (406938) το field6 χρησιμοποιείται ήδη ως μπαταρία,
 // οπότε εκεί δεν εμφανίζουμε badge σύνδεσης.
+// ── DARK MODE ──
+function isDarkMode() {
+  return document.documentElement.classList.contains('dark-mode');
+}
+function chartAxisColor() { return isDarkMode() ? '#999' : '#888'; }
+function chartGridColor() { return isDarkMode() ? '#2a2a2a' : '#eee'; }
+function updateThemeToggleUI() {
+  const on = isDarkMode();
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = on ? '☀️' : '🌙';
+  const rowIcon = document.getElementById('theme-row-icon');
+  if (rowIcon) rowIcon.textContent = on ? '☀️' : '🌙';
+  const cb = document.getElementById('dark-mode-toggle');
+  if (cb) cb.checked = on;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', on ? '#0d0d0d' : '#1a3a1a');
+}
+function toggleDarkMode(forceValue) {
+  const next = typeof forceValue === 'boolean' ? forceValue : !isDarkMode();
+  document.documentElement.classList.toggle('dark-mode', next);
+  try { localStorage.setItem('darkMode', next ? '1' : '0'); } catch (e) {}
+  updateThemeToggleUI();
+  // Ανανέωση χρωμάτων στα ήδη σχεδιασμένα γραφήματα (Chart.js δεν ακολουθεί CSS)
+  if (typeof myChart !== 'undefined' && myChart) {
+    myChart.options.scales.x.ticks.color = chartAxisColor();
+    myChart.options.scales.y.ticks.color = chartAxisColor();
+    myChart.options.scales.x.grid.color = chartGridColor();
+    myChart.options.scales.y.grid.color = chartGridColor();
+    myChart.update();
+  }
+  if (typeof graphCharts !== 'undefined') {
+    Object.values(graphCharts).forEach(ch => {
+      if (!ch) return;
+      ch.options.scales.x.ticks.color = chartAxisColor();
+      ch.options.scales.y.ticks.color = chartAxisColor();
+      ch.options.scales.x.grid.color = chartGridColor();
+      ch.options.scales.y.grid.color = chartGridColor();
+      ch.update();
+    });
+  }
+}
+document.addEventListener('DOMContentLoaded', updateThemeToggleUI);
+
 function isConnField6Available() {
   return getFieldMap().bat !== 'field6';
 }
@@ -1187,7 +1333,7 @@ function drawChart(feeds) {
       plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: '#f0a500', borderWidth: 1, padding: 10,
         callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + ctx.parsed.y.toFixed(3) + ' kg' }
       }},
-      scales: { x: { ticks: { font: { size: 9 }, color: '#888', maxRotation: 0 }, grid: { color: '#eee' } }, y: { ticks: { font: { size: 10 }, color: '#888', callback: v => v.toFixed(1) }, grid: { color: '#eee' } } }
+      scales: { x: { ticks: { font: { size: 9 }, color: chartAxisColor(), maxRotation: 0 }, grid: { color: chartGridColor() } }, y: { ticks: { font: { size: 10 }, color: chartAxisColor(), callback: v => v.toFixed(1) }, grid: { color: chartGridColor() } } }
     }
   });
   document.getElementById('loading').style.display = 'none';
@@ -1296,10 +1442,10 @@ function renderGraphs() {
             callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + def.unit) : '—') }
           }},
           scales: {
-            x: { ticks: { font: { size: 8 }, color: '#888', maxRotation: 0 }, grid: { color: '#f0f0f0' } },
+            x: { ticks: { font: { size: 8 }, color: chartAxisColor(), maxRotation: 0 }, grid: { color: chartGridColor() } },
             y: def.categorical
-              ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: '#888', stepSize: 1, callback: yLabelFor }, grid: { color: '#f0f0f0' } }
-              : { ticks: { font: { size: 9 }, color: '#888', callback: v => v.toFixed(def.toFixed) }, grid: { color: '#f0f0f0' } }
+              ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: chartAxisColor(), stepSize: 1, callback: yLabelFor }, grid: { color: chartGridColor() } }
+              : { ticks: { font: { size: 9 }, color: chartAxisColor(), callback: v => v.toFixed(def.toFixed) }, grid: { color: chartGridColor() } }
           }
         }
       });
