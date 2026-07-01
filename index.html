@@ -112,7 +112,8 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .diff-neg { color: #cc1a1a; }
 .last-time { font-size: 13px; color: #444; font-weight: 600; }
 .last-time-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-.conn-badge { display: none; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 10px; line-height: 1.5; white-space: nowrap; }
+.conn-badge { display: none; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 10px; line-height: 1.5; white-space: nowrap; cursor: pointer; }
+.conn-badge:active { transform: scale(0.94); }
 .conn-badge.conn-wifi { background: #dbf0ff; color: #0a5fa0; border: 1px solid #8fcdf2; }
 .conn-badge.conn-gsm { background: #fdebc8; color: #8a5800; border: 1px solid #f0c878; }
 .conn-badge-sm { font-size: 9px; padding: 1px 6px; margin-top: 3px; }
@@ -263,6 +264,12 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .sim-toast-msg { font-size: 14px; font-weight: 700; line-height: 1.4; }
 .sim-toast-msg.ok  { color: #1a7a1a; }
 .sim-toast-msg.err { color: #cc1a1a; }
+
+#conn-info-toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.85); background: #fff; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); z-index: 1500; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; max-width: 280px; width: 86%; border-left: 5px solid #0a5fa0; }
+#conn-info-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+#conn-info-toast.conn-toast-gsm { border-left-color: #8a5800; }
+.conn-info-toast-icon { font-size: 28px; flex-shrink: 0; }
+.conn-info-toast-msg { font-size: 14px; font-weight: 700; line-height: 1.4; color: #222; }
 /* ── NOTIFICATIONS ── */
 .notif-wrap { margin: 0 10px 4px; background: #fff; border-radius: 12px; padding: 14px 16px; border: 1px solid #ddd; }
 .notif-desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 14px; }
@@ -356,6 +363,8 @@ html.dark-mode .alert-box { background: #232323; }
 html.dark-mode .alert-msg { color: #eee; }
 html.dark-mode .alert-detail { color: #999; }
 html.dark-mode #sim-toast { background: #232323; }
+html.dark-mode #conn-info-toast { background: #232323; }
+html.dark-mode .conn-info-toast-msg { color: #eee; }
 html.dark-mode .sim-toast-msg.ok { color: #3ecf3e; }
 html.dark-mode .sim-toast-msg.err { color: #ff5c5c; }
 html.dark-mode #sim-status-banner.sim-ok { background: #1c3a1c; border-color: #4a9e4a; }
@@ -453,6 +462,12 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
 <div id="sim-toast">
   <span class="sim-toast-icon" id="sim-toast-icon">📶</span>
   <span class="sim-toast-msg" id="sim-toast-msg"></span>
+</div>
+
+<!-- ── CONN INFO TOAST (floating comment when tapping a WiFi/GSM badge) ── -->
+<div id="conn-info-toast">
+  <span class="conn-info-toast-icon" id="conn-info-toast-icon">📶</span>
+  <span class="conn-info-toast-msg" id="conn-info-toast-msg"></span>
 </div>
 
 <!-- ── MAIN APP ── -->
@@ -809,10 +824,30 @@ function setConnBadge(elId, feed) {
     el.textContent = info.icon + ' ' + info.text;
     el.className = el.className.replace(/\bconn-wifi\b|\bconn-gsm\b/g, '').trim() + ' ' + info.cls;
     el.style.display = 'inline-flex';
+    el.onclick = () => showConnInfoToast(info.text);
   } else {
     el.textContent = '';
     el.style.display = 'none';
+    el.onclick = null;
   }
+}
+
+// ── CONN INFO TOAST (σχόλιο κατά το πάτημα σε badge WiFi/GSM) ──
+let _connToastTimer = null;
+function showConnInfoToast(connType) {
+  const isGsm = connType === 'GSM';
+  const toast = document.getElementById('conn-info-toast');
+  const icon  = document.getElementById('conn-info-toast-icon');
+  const msg   = document.getElementById('conn-info-toast-msg');
+  if (_connToastTimer) clearTimeout(_connToastTimer);
+  toast.className = isGsm ? 'conn-toast-gsm' : '';
+  icon.textContent = isGsm ? '📡' : '📶';
+  msg.textContent = isGsm
+    ? 'Η αποστολή δεδομένων έγινε με σύνδεση GSM/MOBILE'
+    : 'Η αποστολή δεδομένων έγινε με σύνδεση WIFI';
+  toast.offsetHeight; // reflow ώστε να ξαναπαίξει το transition
+  toast.classList.add('show');
+  _connToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 2800);
 }
 
 // ── STATE ──
