@@ -512,6 +512,10 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
         <label class="gtoggle"><input type="checkbox" id="gt-bat" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
         <span class="gtoggle-label">🔋 Μπατ.</span>
       </div>
+      <div class="gtoggle-item" id="gtoggle-conn-item" style="display:none;">
+        <label class="gtoggle"><input type="checkbox" id="gt-conn" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
+        <span class="gtoggle-label">📡 Σύνδεση</span>
+      </div>
     </div>
     <div id="graphs-container"></div>
     <div id="graphs-nodata" style="display:none;text-align:center;padding:40px 0;color:#aaa;font-size:14px;">Φόρτωση γραφημάτων...</div>
@@ -1208,13 +1212,17 @@ function applyGraphRange() { renderGraphs(); }
 
 function getGraphDefs() {
   const FM = getFieldMap();
-  return [
+  const defs = [
     { id: 'weight', toggleId: 'gt-weight', field: 'field1', label: '⚖️ Βάρος (kg)', color: '#f0a500', unit: ' kg', toFixed: 3 },
     { id: 'temp',   toggleId: 'gt-temp',   field: FM.temp,  label: '🌡️ Θερμοκρασία (°C)', color: '#e05050', unit: ' °C', toFixed: 1 },
     { id: 'hum',    toggleId: 'gt-hum',    field: FM.hum,   label: '💧 Υγρασία (%)', color: '#1a6dcc', unit: ' %', toFixed: 1 },
     { id: 'bat',    toggleId: 'gt-bat',    field: FM.bat,   label: '🔋 Μπαταρία (v)', color: '#4a9e4a', unit: ' v', toFixed: 3 },
     { id: 'sig',    toggleId: 'gt-sig',    field: FM.sig,   label: '📶 Σήμα (%)', color: '#888', unit: ' %', toFixed: 0 },
   ];
+  if (isConnField6Available()) {
+    defs.push({ id: 'conn', toggleId: 'gt-conn', field: 'field6', label: '📡 Τύπος Σύνδεσης', color: '#0a5fa0', categorical: true, catMap: { 11: 'WiFi', 22: 'GSM' } });
+  }
+  return defs;
 }
 
 function destroyGraphCharts() {
@@ -1228,7 +1236,12 @@ function renderGraphs() {
   container.innerHTML = '';
   destroyGraphCharts();
 
-  const activeDefs = getGraphDefs().filter(d => document.getElementById(d.toggleId).checked);
+  // Εμφάνιση του toggle "Σύνδεση" μόνο αν το field6 υπάρχει πραγματικά ως τύπος σύνδεσης σε αυτό το κανάλι/εύρος
+  const connItem = document.getElementById('gtoggle-conn-item');
+  const hasConnData = isConnField6Available() && feeds.some(f => f.field6 === '11' || f.field6 === '22');
+  if (connItem) connItem.style.display = hasConnData ? 'flex' : 'none';
+
+  const activeDefs = getGraphDefs().filter(d => document.getElementById(d.toggleId).checked && (d.id !== 'conn' || hasConnData));
   if (!activeDefs.length || !feeds.length) {
     document.getElementById('graphs-nodata').style.display = 'block';
     document.getElementById('graphs-nodata').textContent = feeds.length ? 'Επιλέξτε τουλάχιστον ένα γράφημα.' : 'Δεν υπάρχουν δεδομένα για το επιλεγμένο εύρος.';
@@ -1239,9 +1252,21 @@ function renderGraphs() {
   const labels = feeds.map(f => fmtDateShort(f.created_at));
 
   activeDefs.forEach(def => {
-    const values = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null).filter(v => v !== null);
+    let vals, values;
+    if (def.categorical) {
+      // Χαρτογράφηση 11->1 (WiFi), 22->2 (GSM), οτιδήποτε άλλο -> null
+      vals = feeds.map(f => {
+        const raw = String(f[def.field] || '').trim();
+        if (raw === '11') return 1;
+        if (raw === '22') return 2;
+        return null;
+      });
+      values = vals.filter(v => v !== null);
+    } else {
+      values = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null).filter(v => v !== null);
+      vals = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null);
+    }
     if (!values.length) return;
-    const vals = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null);
 
     const block = document.createElement('div');
     block.className = 'graph-block';
@@ -1251,16 +1276,22 @@ function renderGraphs() {
     requestAnimationFrame(() => {
       const ctx = document.getElementById('gc-' + def.id);
       if (!ctx) return;
+      const yLabelFor = v => def.categorical ? (def.catMap[v === 1 ? 11 : v === 2 ? 22 : null] || '') : v.toFixed(def.toFixed);
       graphCharts[def.id] = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [{ label: def.label, data: vals, borderColor: def.color, backgroundColor: def.color + '18', pointBackgroundColor: def.color, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 10, pointHoverBackgroundColor: def.color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3, borderWidth: 2, tension: 0.2, fill: true, spanGaps: true }]},
+        data: { labels, datasets: [{ label: def.label, data: vals, borderColor: def.color, backgroundColor: def.color + '18', pointBackgroundColor: def.color, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 10, pointHoverBackgroundColor: def.color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3, borderWidth: 2, tension: def.categorical ? 0 : 0.2, stepped: def.categorical ? 'middle' : false, fill: def.categorical ? false : true, spanGaps: true }]},
         options: {
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'nearest', intersect: true },
           plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: def.color, borderWidth: 1, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 14, weight: 'bold' },
-            callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? ctx.parsed.y.toFixed(def.toFixed) + def.unit : '—') }
+            callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + def.unit) : '—') }
           }},
-          scales: { x: { ticks: { font: { size: 8 }, color: '#888', maxRotation: 0 }, grid: { color: '#f0f0f0' } }, y: { ticks: { font: { size: 9 }, color: '#888', callback: v => v.toFixed(def.toFixed) }, grid: { color: '#f0f0f0' } } }
+          scales: {
+            x: { ticks: { font: { size: 8 }, color: '#888', maxRotation: 0 }, grid: { color: '#f0f0f0' } },
+            y: def.categorical
+              ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: '#888', stepSize: 1, callback: yLabelFor }, grid: { color: '#f0f0f0' } }
+              : { ticks: { font: { size: 9 }, color: '#888', callback: v => v.toFixed(def.toFixed) }, grid: { color: '#f0f0f0' } }
+          }
         }
       });
     });
