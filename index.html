@@ -202,7 +202,8 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .btn-range-apply:active { background: #3a8a3a; }
 .graph-toggles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 4px; padding: 10px 12px; background: #d8d8d8; border-bottom: 1px solid #bbb; }
 .gtoggle-item { display: flex; align-items: center; gap: 6px; }
-.gtoggle-label { font-size: 13px; font-weight: 600; color: #333; }
+.gt-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 16px; line-height: 1; flex-shrink: 0; }
+.gtoggle-label { font-size: 13px; font-weight: 600; color: #333; display: inline-flex; align-items: center; gap: 4px; }
 .gtoggle { position: relative; width: 38px; height: 20px; }
 .gtoggle input { display: none; }
 .gtoggle-slider { position: absolute; inset: 0; background: #aaa; border-radius: 20px; cursor: pointer; transition: background 0.3s; }
@@ -494,27 +495,27 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
     <div class="graph-toggles">
       <div class="gtoggle-item">
         <label class="gtoggle"><input type="checkbox" id="gt-weight" checked onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">⚖️ Βάρος</span>
+        <span class="gtoggle-label"><span class="gt-icon">⚖️</span> Βάρος</span>
       </div>
       <div class="gtoggle-item">
         <label class="gtoggle"><input type="checkbox" id="gt-temp" checked onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">🌡️ Θερμ.</span>
+        <span class="gtoggle-label"><span class="gt-icon">🌡️</span> Θερμ.</span>
       </div>
       <div class="gtoggle-item">
         <label class="gtoggle"><input type="checkbox" id="gt-sig" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">📶 Σήμα</span>
+        <span class="gtoggle-label"><span class="gt-icon">📶</span> Σήμα</span>
       </div>
       <div class="gtoggle-item">
         <label class="gtoggle"><input type="checkbox" id="gt-hum" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">💧 Υγρασία</span>
+        <span class="gtoggle-label"><span class="gt-icon">💧</span> Υγρασία</span>
       </div>
       <div class="gtoggle-item">
         <label class="gtoggle"><input type="checkbox" id="gt-bat" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">🔋 Μπατ.</span>
+        <span class="gtoggle-label"><span class="gt-icon">🔋</span> Μπατ.</span>
       </div>
       <div class="gtoggle-item" id="gtoggle-conn-item" style="display:none;">
         <label class="gtoggle"><input type="checkbox" id="gt-conn" onchange="renderGraphs()"><span class="gtoggle-slider"></span></label>
-        <span class="gtoggle-label">📡 Σύνδεση</span>
+        <span class="gtoggle-label"><span class="gt-icon">📡</span> Σύνδεση</span>
       </div>
     </div>
     <div id="graphs-container"></div>
@@ -639,11 +640,19 @@ function getFieldMap() {
 function isConnField6Available() {
   return getFieldMap().bat !== 'field6';
 }
+// Ελέγχει αν υπάρχει ΚΑΠΟΥ έγκυρη τιμή field6 (11 ή 22) σε όλο το ιστορικό του καναλιού
+function hasAnyConnData() {
+  return isConnField6Available() && Array.isArray(allFeeds) && allFeeds.some(f => f.field6 === '11' || f.field6 === '22');
+}
+// Χρησιμοποιείται ΜΟΝΟ για τα badges στο tab Ζυγαριά (last-time / προηγούμενες μετρήσεις).
+// Αν το field6 δεν υπάρχει πουθενά στο ιστορικό, εμφανίζουμε ως προεπιλογή GSM.
+// Το tab Γραφήματα ΔΕΝ χρησιμοποιεί αυτή τη συνάρτηση, οπότε δεν επηρεάζεται από το fallback.
 function connInfo(feed) {
   if (!feed || !isConnField6Available()) return null;
   const v = String(feed.field6 || '').trim();
   if (v === '11') return { icon: '📶', text: 'WiFi', cls: 'conn-wifi' };
   if (v === '22') return { icon: '📡', text: 'GSM', cls: 'conn-gsm' };
+  if (!hasAnyConnData()) return { icon: '📡', text: 'GSM', cls: 'conn-gsm' };
   return null;
 }
 function setConnBadge(elId, feed) {
