@@ -24,6 +24,8 @@ jobs:
           const WEIGHT_DROP_THRESHOLD = -2500;
           const BAT_LOW_THRESHOLD = 2.9;
           const PROJECT_ID = 'ibeescale';
+          // Κανάλια όπου το field6 ΔΕΝ είναι τύπος σύνδεσης (χρησιμοποιείται ήδη για κάτι άλλο, π.χ. μπαταρία)
+          const CHANNELS_WITHOUT_CONN_FIELD6 = ['406938']; // nalban: field6 = μπαταρία
 
           fs.writeFileSync('/tmp/sa.json', process.env.FIREBASE_SERVICE_ACCOUNT);
 
@@ -60,6 +62,17 @@ jobs:
           }
           const httpPost  = (url, body, token) => httpRequest('POST',  url, body, token);
           const httpPatch = (url, body, token) => httpRequest('PATCH', url, body, token);
+
+          // Τύπος σύνδεσης αποστολής (field6): 11 = WiFi, 22 = GSM.
+          // Αν δεν υπάρχει πουθενά έγκυρη τιμή στο ιστορικό του καναλιού, προεπιλογή GSM.
+          function getConnLabel(channelId, latestFeed, allFeeds) {
+            if (CHANNELS_WITHOUT_CONN_FIELD6.includes(String(channelId))) return null;
+            const v = String(latestFeed.field6 || '').trim();
+            if (v === '11') return '📶 WiFi';
+            if (v === '22') return '📡 GSM';
+            const hasAnyConnData = allFeeds.some(f => f.field6 === '11' || f.field6 === '22');
+            return hasAnyConnData ? null : '📡 GSM';
+          }
 
           async function getAccessToken() {
             const auth = new GoogleAuth({
@@ -182,7 +195,8 @@ jobs:
                   const diffFromPrev = prev ? Math.round((weightNow - parseFloat(prev.field1)) * 1000) : null;
                   const diffFromPrevStr = diffFromPrev !== null ? (diffFromPrev >= 0 ? '+' : '') + diffFromPrev + ' gr' : '—';
                   const timeStr = new Date(latestTs).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Athens' });
-                  const notifBody = `${weightNow.toFixed(3)} kg •• ${diffFromPrevStr} •• ${timeStr}`;
+                  const connLabel = getConnLabel(channelId, latest, feeds);
+                  const notifBody = `${weightNow.toFixed(3)} kg •• ${diffFromPrevStr} •• ${timeStr}` + (connLabel ? ` •• ${connLabel}` : '');
                   for (const t of tokens)
                     await sendNotification(t, `📡 Νέα Δεδομένα •• ${channelName}`, notifBody, accessToken);
 
