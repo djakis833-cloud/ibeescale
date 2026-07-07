@@ -110,6 +110,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .diff-row b { font-size: 18px; font-weight: 700; }
 .diff-pos { color: #1a7a1a; }
 .diff-neg { color: #cc1a1a; }
+.diff-row-sub { color: #666; }
 .last-time { font-size: 13px; color: #444; font-weight: 600; }
 .last-time-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .conn-badge { display: none; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 10px; line-height: 1.5; white-space: nowrap; cursor: pointer; }
@@ -304,6 +305,7 @@ html.dark-mode .ch-switch-label { color: #999; }
 html.dark-mode .weight-card { background: #1a1a1a; border-bottom-color: #2e2e2e; }
 html.dark-mode .weight-value { color: #f5f5f5; }
 html.dark-mode .diff-row { color: #ddd; }
+html.dark-mode .diff-row-sub { color: #999; }
 html.dark-mode .diff-pos { color: #3ecf3e; }
 html.dark-mode .diff-neg { color: #ff5c5c; }
 html.dark-mode .last-time { color: #aaa; }
@@ -504,6 +506,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
         </div>
       </div>
       <div class="diff-row">Διαφορά Ημέρας : <b><span id="diff-day" class="diff-pos" style="font-size:22px;">—</span></b></div>
+      <div class="diff-row diff-row-sub" style="font-size:14px;">Διαφορά ίδιας ώρας χθες : <b><span id="diff-sametime" class="diff-pos" style="font-size:14px;">—</span></b></div>
       <div class="diff-row" style="display:none;">Διαφορά Προηγ. Μέτρησης : <b><span id="diff-prev-hidden" class="diff-pos">—</span></b></div>
       <div class="last-time-row">
         <div class="last-time" id="last-time">Τελευταία μέτρηση: —</div>
@@ -1072,7 +1075,7 @@ function doLogout() {
   if (myChart) { myChart.destroy(); myChart = null; }
   destroyGraphCharts();
   document.getElementById('graphs-container').innerHTML = '';
-  ['tare-diff','weight-main','diff-day','diff-prev','last-time','temp','hum','bat','sig'].forEach(id => {
+  ['tare-diff','weight-main','diff-day','diff-sametime','diff-prev','last-time','temp','hum','bat','sig'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = id === 'last-time' ? 'Τελευταία μέτρηση: —' : '—';
   });
@@ -1267,6 +1270,25 @@ function updateUI() {
   const dd = diffStr(weightNow, dayFeed ? parseFloat(dayFeed.field1) : null);
   const elDay = document.getElementById('diff-day');
   elDay.textContent = dd.text; elDay.className = dd.cls;
+
+  // Διαφορά σε σχέση με την ίδια ώρα χθες (π.χ. σήμερα 12:00 vs χθες 12:00)
+  const sameTimeYesterday = new Date(latest.created_at);
+  sameTimeYesterday.setDate(sameTimeYesterday.getDate() - 1);
+  let sameTimeFeed = null, bestDSame = Infinity;
+  for (const f of allFeeds) {
+    const d = Math.abs(new Date(f.created_at).getTime() - sameTimeYesterday.getTime());
+    if (d < bestDSame) { bestDSame = d; sameTimeFeed = f; }
+  }
+  // Δέχεται τιμή μόνο αν βρέθηκε μέτρηση εντός 2 ωρών από την ίδια ώρα χθες
+  const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+  const ds = (sameTimeFeed && bestDSame <= TWO_HOURS_MS)
+    ? diffStr(weightNow, parseFloat(sameTimeFeed.field1))
+    : { text: '—', cls: '' };
+  const elSameTime = document.getElementById('diff-sametime');
+  if (elSameTime) {
+    elSameTime.textContent = ds.text;
+    elSameTime.className = ds.cls;
+  }
 
   const THRESHOLD = -2500;
   const dayGrams  = dayFeed ? Math.round((weightNow - parseFloat(dayFeed.field1)) * 1000) : null;
