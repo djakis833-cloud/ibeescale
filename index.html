@@ -11,6 +11,11 @@
   Μορφή: vMAJOR.MINOR.PATCH (π.χ. 15.4.5 -> 15.4.6 για μικρή αλλαγή/bugfix,
   15.4.5 -> 15.5.0 για νέο feature). Χρησιμοποίησε την κρίση σου για το ποιο
   ψηφίο ν' ανέβει, ανάλογα με το μέγεθος της αλλαγής.
+
+  ΕΠΙΠΛΕΟΝ ΣΗΜΕΙΩΣΗ: Κάθε φορά που δημιουργείς (create_file) το αρχείο index.html
+  με τις αλλαγές, το ΟΝΟΜΑ του αρχείου πρέπει να περιέχει τον αριθμό της τρέχουσας
+  έκδοσης, στη μορφή index_vMAJOR.MINOR.PATCH.html (π.χ. index_v15.4.6.html),
+  αντί για το απλό "index.html".
 -->
 <html lang="el">
 <head>
@@ -419,7 +424,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.7</div>
+    <div class="login-version">ver. 15.4.8</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -664,7 +669,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.7</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.8</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -1373,11 +1378,11 @@ function updateUI() {
 
   const batNow = latest[FM.bat] ? parseFloat(latest[FM.bat]) : null;
   const batEl = document.getElementById('bat');
-  batEl.textContent = batNow !== null ? batNow.toFixed(1) + ' v' : '—';
+  batEl.textContent = batNow !== null ? batNow.toFixed(2) + ' v' : '—';
   batEl.classList.toggle('blink-alert', batNow !== null && batNow < 2.9);
   if (batNow !== null && batNow < 2.9 && !alertBatShown) {
     alertBatShown = true;
-    showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(1) + ' v');
+    showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(2) + ' v');
   }
   if (batNow !== null && batNow >= 2.9) alertBatShown = false;
   const pB = lastFor(FM.bat);
@@ -1392,7 +1397,7 @@ function updateUI() {
   document.getElementById('prev-temp-time').textContent = pT ? fmtTimeOnly(pT.created_at) : '';
   document.getElementById('prev-hum').textContent  = pH ? parseFloat(pH[FM.hum]).toFixed(1) + ' %'  : '—';
   document.getElementById('prev-hum-time').textContent  = pH ? fmtTimeOnly(pH.created_at) : '';
-  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB[FM.bat]).toFixed(1) + ' v'  : '—';
+  document.getElementById('prev-bat').textContent  = pB ? parseFloat(pB[FM.bat]).toFixed(2) + ' v'  : '—';
   document.getElementById('prev-bat-time').textContent  = pB ? fmtTimeOnly(pB.created_at) : '';
   document.getElementById('prev-sig').textContent  = pS ? Math.round(parseFloat(pS[FM.sig])) + ' %' : '—';
   document.getElementById('prev-sig-time').textContent  = pS ? fmtTimeOnly(pS.created_at) : '';
@@ -1453,7 +1458,7 @@ function getGraphDefs() {
     { id: 'weight', toggleId: 'gt-weight', field: 'field1', label: '⚖️ Βάρος (kg)', color: '#f0a500', unit: ' kg', toFixed: 3 },
     { id: 'temp',   toggleId: 'gt-temp',   field: FM.temp,  label: '🌡️ Θερμοκρασία (°C)', color: '#e05050', unit: ' °C', toFixed: 1 },
     { id: 'hum',    toggleId: 'gt-hum',    field: FM.hum,   label: '💧 Υγρασία (%)', color: '#1a6dcc', unit: ' %', toFixed: 1 },
-    { id: 'bat',    toggleId: 'gt-bat',    field: FM.bat,   label: '🔋 Μπαταρία (v)', color: '#4a9e4a', unit: ' v', toFixed: 3 },
+    { id: 'bat',    toggleId: 'gt-bat',    field: FM.bat,   label: '🔋 Μπαταρία (v)', color: '#4a9e4a', unit: ' v', toFixed: 2 },
     { id: 'sig',    toggleId: 'gt-sig',    field: FM.sig,   label: '📶 Σήμα (%)', color: '#888', unit: ' %', toFixed: 0 },
   ];
   if (isConnField6Available()) {
@@ -1768,7 +1773,7 @@ function toggleLastReadings() {
   document.getElementById('prev-panel').classList.toggle('visible', on);
 }
 
-setInterval(() => { if (CHANNEL) loadData(); }, 60000);
+setInterval(() => { if (CHANNEL) loadData(); }, 120000);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
