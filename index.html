@@ -182,6 +182,42 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .loading-msg { text-align: center; padding: 60px 0; color: #aaa; font-size: 13px; }
 .error-msg { text-align: center; padding: 30px 0; color: #cc2200; font-size: 13px; }
 
+/* ── SKELETON LOADERS (shimmer) ── */
+.skeleton-block { display: none; }
+.skeleton-block.active { display: block; }
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #dcdcdc;
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+
+.skel-scale-wrap { background: #ececec; padding: 14px 16px; border-radius: 10px 10px 0 0; }
+.skel-weight-value { width: 150px; height: 34px; margin: 0 auto 12px; }
+.skel-line { height: 13px; margin: 8px auto; }
+.skel-line.w50 { width: 50%; }
+.skel-line.w65 { width: 65%; }
+.skel-sensors-wrap { background: #d8d8d8; margin: 8px 8px 0; border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.skel-sensor-box { height: 40px; }
+.skel-chart-wrap { background: #fff; margin: 8px 8px 0; border-radius: 10px; padding: 12px 10px; }
+.skel-chart-title { width: 55%; height: 11px; margin: 0 auto 12px; }
+.skel-chart-box { height: 190px; }
+.skel-graph-box { height: 160px; margin-bottom: 10px; }
+
+html.dark-mode .skeleton { background: #2a2a2a; }
+html.dark-mode .skeleton::after { background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0) 100%); }
+html.dark-mode .skel-scale-wrap { background: #1a1a1a; }
+html.dark-mode .skel-sensors-wrap { background: #1e1e1e; }
+html.dark-mode .skel-chart-wrap { background: #1a1a1a; }
+
 /* ── BLINK / COLORS ── */
 @keyframes blink-red { 0%, 100% { color: #cc1a1a; opacity: 1; } 50% { color: #ff0000; opacity: 0.25; } }
 .blink-alert { animation: blink-red 0.7s ease-in-out infinite !important; }
@@ -226,6 +262,11 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .range-label-sm { font-size: 12px; color: #666; }
 .btn-range-apply { padding: 6px 14px; background: #4a9e4a; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .btn-range-apply:active { background: #3a8a3a; }
+.graphs-compare-row { display: none; border-top: 1px solid #bbb; margin-top: 10px; padding-top: 10px; }
+.compare-toggle-line { display: flex; align-items: center; gap: 6px; }
+.compare-channels-row { display: none; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.compare-ch-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; color: #555; border: 1px solid #b0b0b0; background: #fff; cursor: pointer; border-radius: 20px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.compare-ch-btn.active { background: #4a7fc9; border-color: #4a7fc9; color: #fff; }
 .graph-toggles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 4px; padding: 10px 12px; background: #d8d8d8; border-bottom: 1px solid #bbb; }
 .gtoggle-item { display: flex; align-items: center; gap: 6px; }
 .gt-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 16px; line-height: 1; flex-shrink: 0; }
@@ -372,6 +413,9 @@ html.dark-mode .range-input { background: #1a1a1a; border-color: #333; color: #e
 html.dark-mode .range-label-sm { color: #999; }
 html.dark-mode .graph-toggles { background: #1e1e1e; border-bottom-color: #333; }
 html.dark-mode .gtoggle-label { color: #ddd; }
+html.dark-mode .graphs-compare-row { border-top-color: #333; }
+html.dark-mode .compare-ch-btn { background: #2a2a2a; border-color: #444; color: #bbb; }
+html.dark-mode .compare-ch-btn.active { background: #4a7fc9; border-color: #4a7fc9; color: #fff; }
 html.dark-mode .graph-block { background: #1a1a1a; }
 html.dark-mode .graph-block-title { color: #999; }
 html.dark-mode .graph-loading { color: #777; }
@@ -424,7 +468,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.4.8</div>
+    <div class="login-version">ver. 15.6.1</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -515,6 +559,25 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
 
   <!-- ══ TAB: ΖΥΓΑΡΙΑ ══ -->
   <div id="tab-scale" class="tab-page active">
+    <!-- Skeleton loader (εμφανίζεται μόνο στην πρώτη φόρτωση, πριν έρθουν δεδομένα) -->
+    <div class="skeleton-block active" id="skel-scale">
+      <div class="skel-scale-wrap">
+        <div class="skeleton skel-weight-value"></div>
+        <div class="skeleton skel-line w50"></div>
+        <div class="skeleton skel-line w65"></div>
+      </div>
+      <div class="skel-sensors-wrap">
+        <div class="skeleton skel-sensor-box"></div>
+        <div class="skeleton skel-sensor-box"></div>
+        <div class="skeleton skel-sensor-box"></div>
+        <div class="skeleton skel-sensor-box"></div>
+      </div>
+      <div class="skel-chart-wrap">
+        <div class="skeleton skel-chart-title"></div>
+        <div class="skeleton skel-chart-box"></div>
+      </div>
+    </div>
+    <div id="scale-live-content" style="display:none">
     <div class="weight-card">
       <div class="weight-row">
         <div class="hive-icon">⚖️</div>
@@ -589,6 +652,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
         <canvas id="chart" style="display:none"></canvas>
       </div>
     </div>
+    </div><!-- end scale-live-content -->
     <div class="tare-card">
       <div class="tare-buttons">
         <button class="btn-tare" id="btn-tare" onclick="doTare()">TARE</button>
@@ -622,6 +686,13 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
         <input type="date" class="range-input" id="inp-date-to" style="width:130px">
         <button class="btn-range-apply" onclick="applyGraphRange()">Εφαρμογή</button>
       </div>
+      <div class="graphs-compare-row" id="graphs-compare-row">
+        <div class="compare-toggle-line">
+          <label class="gtoggle"><input type="checkbox" id="gt-compare" onchange="toggleCompareMode()"><span class="gtoggle-slider"></span></label>
+          <span class="gtoggle-label"><span class="gt-icon">🔀</span> Σύγκριση ζυγαριών</span>
+        </div>
+        <div id="compare-channels-row" class="compare-channels-row"></div>
+      </div>
     </div>
     <div class="graph-toggles">
       <div class="gtoggle-item">
@@ -649,6 +720,10 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
         <span class="gtoggle-label"><span class="gt-icon">📡</span> Σύνδεση</span>
       </div>
     </div>
+    <div class="skeleton-block active" id="skel-graphs">
+      <div class="skeleton skel-graph-box"></div>
+      <div class="skeleton skel-graph-box"></div>
+    </div>
     <div id="graphs-container"></div>
     <div id="graphs-nodata" style="display:none;text-align:center;padding:40px 0;color:#aaa;font-size:14px;">Φόρτωση γραφημάτων...</div>
   </div><!-- end tab-graphs -->
@@ -669,7 +744,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.4.8</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.6.1</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -813,6 +888,9 @@ function toggleDarkMode(forceValue) {
       ch.options.scales.y.ticks.color = chartAxisColor();
       ch.options.scales.x.grid.color = chartGridColor();
       ch.options.scales.y.grid.color = chartGridColor();
+      if (ch.options.plugins && ch.options.plugins.legend && ch.options.plugins.legend.labels) {
+        ch.options.plugins.legend.labels.color = chartAxisColor();
+      }
       ch.update();
     });
   }
@@ -873,6 +951,12 @@ function showConnInfoToast(connType) {
 
 // ── STATE ──
 let CHANNELS = [], CHANNEL = '', activeChannelIndex = 0;
+// ── ΣΥΓΚΡΙΣΗ ΖΥΓΑΡΙΩΝ (tab Γραφήματα) ──
+let compareMode = false;
+let compareSelectedChannels = new Set();
+let compareFeedsCache = {}; // idx -> feeds array (φορτωμένα από ThingSpeak για σύγκριση)
+const COMPARE_COLORS = ['#f0a500', '#1a6dcc', '#e05050', '#4a9e4a', '#9b59b6', '#e67e22'];
+function compareColorFor(k) { return COMPARE_COLORS[k % COMPARE_COLORS.length]; }
 let currentUser = '', userRow = null; // full row from sheet
 let myChart = null, graphCharts = {};
 let allFeeds = [], graphFeeds = [];
@@ -1040,6 +1124,15 @@ function enterApp() {
   document.getElementById('hdr-badge').textContent = CHANNELS.length >= 2 ? 'No ' + (activeChannelIndex + 1) : display.badge;
   if (CHANNELS.length >= 2) { document.getElementById('channel-switch-bar').classList.add('visible'); renderPills(); updatePills(); }
   else { document.getElementById('channel-switch-bar').classList.remove('visible'); }
+  // ── Reset σύγκρισης ζυγαριών για τον νέο χρήστη/κανάλι ──
+  compareMode = false; compareFeedsCache = {};
+  const gtCompareEl = document.getElementById('gt-compare');
+  if (gtCompareEl) gtCompareEl.checked = false;
+  const compareRowEl = document.getElementById('graphs-compare-row');
+  const compareChRowEl = document.getElementById('compare-channels-row');
+  if (compareRowEl) compareRowEl.style.display = CHANNELS.length >= 2 ? 'block' : 'none';
+  if (compareChRowEl) compareChRowEl.style.display = 'none';
+  if (CHANNELS.length >= 2) renderCompareChannelsUI();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('bottom-nav').style.display = 'flex';
@@ -1093,6 +1186,9 @@ function doLogout() {
   if (myChart) { myChart.destroy(); myChart = null; }
   destroyGraphCharts();
   document.getElementById('graphs-container').innerHTML = '';
+  compareMode = false; compareSelectedChannels = new Set(); compareFeedsCache = {};
+  const compareRowEl2 = document.getElementById('graphs-compare-row');
+  if (compareRowEl2) compareRowEl2.style.display = 'none';
   ['tare-diff','weight-main','diff-day','diff-sametime','diff-prev','last-time','temp','hum','bat','sig'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = id === 'last-time' ? 'Τελευταία μέτρηση: —' : '—';
@@ -1151,6 +1247,26 @@ function diffStr(val, ref) {
   return { text: fmtSignedGrams(grams), cls: grams >= 0 ? 'diff-pos' : 'diff-neg' };
 }
 
+// ── Αυτόματη σμίκρυνση γραμματοσειράς ώστε η τιμή (π.χ. βάρος, διαφορά βάρους) να χωράει σε 1 γραμμή ──
+// Ελέγχει αν το στοιχείο "έσπασε" σε 2+ γραμμές (scrollHeight πολύ μεγαλύτερο από ύψος 1 γραμμής)
+// και μειώνει σταδιακά το font-size μέχρι να χωρέσει, ή μέχρι το ελάχιστο επιτρεπτό μέγεθος.
+function fitOneLine(el, maxPx, minPx, step) {
+  if (!el) return;
+  step = step || 1;
+  let size = maxPx;
+  el.style.fontSize = size + 'px';
+  const isWrapped = () => {
+    const cs = getComputedStyle(el);
+    let lh = parseFloat(cs.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(cs.fontSize) * 1.2;
+    return el.scrollHeight > lh * 1.4;
+  };
+  while (size > minPx && isWrapped()) {
+    size -= step;
+    el.style.fontSize = size + 'px';
+  }
+}
+
 function notesKey() { return `notes_${currentUser}_ch${activeChannelIndex}`; }
 
 // ── TARE ανά κανάλι (υποστηρίζει όσα κανάλια έχει ο χρήστης: 2, 3, 4...) ──
@@ -1172,6 +1288,7 @@ function doRefresh() {
   const btn = document.getElementById('refresh-btn');
   btn.classList.add('spinning');
   setTimeout(() => btn.classList.remove('spinning'), 600);
+  compareFeedsCache = {};
   loadData();
 }
 
@@ -1197,9 +1314,32 @@ function deduplicateFeeds(feeds) {
   });
 }
 
+// ── SKELETON LOADERS (showLoading / hideLoading) ──
+// Εμφανίζονται ΜΟΝΟ στην πρώτη φόρτωση (όσο δεν υπάρχουν ακόμη δεδομένα).
+// Σε επόμενα refresh (setInterval / doRefresh) τα δεδομένα παραμένουν ορατά
+// και ενημερώνονται στη θέση τους, χωρίς να "τρεμοπαίζει" η οθόνη.
+window.showLoading = function() {
+  const hasData = window.allFeeds && window.allFeeds.length;
+  if (hasData) return;
+  const skelScale = document.getElementById('skel-scale');
+  const liveScale = document.getElementById('scale-live-content');
+  if (skelScale) skelScale.classList.add('active');
+  if (liveScale) liveScale.style.display = 'none';
+  const errEl = document.getElementById('error');
+  if (errEl) errEl.style.display = 'none';
+};
+window.hideLoading = function() {
+  const skelScale = document.getElementById('skel-scale');
+  const liveScale = document.getElementById('scale-live-content');
+  if (skelScale) skelScale.classList.remove('active');
+  if (liveScale) liveScale.style.display = '';
+  const skelGraphs = document.getElementById('skel-graphs');
+  if (skelGraphs) skelGraphs.classList.remove('active');
+};
+
 // ── LOAD DATA (50 για ζυγαριά, 500 για γραφήματα) ──
 async function loadData() {
-  document.getElementById('loading').style.display = 'block';
+  showLoading();
   document.getElementById('error').style.display = 'none';
   document.getElementById('chart').style.display = 'none';
   try {
@@ -1212,8 +1352,10 @@ async function loadData() {
     graphFeeds = allFeeds;
     if (!allFeeds.length) throw new Error('Δεν βρέθηκαν δεδομένα');
     updateUI();
+    hideLoading();
     if (document.getElementById('tab-graphs').classList.contains('active')) renderGraphs();
   } catch(e) {
+    hideLoading();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('error').style.display = 'block';
     document.getElementById('error').textContent = 'Σφάλμα: ' + e.message;
@@ -1277,6 +1419,8 @@ function updateUI() {
   const dp = diffStr(weightNow, prev ? parseFloat(prev.field1) : null);
   const elPrev = document.getElementById('diff-prev');
   elPrev.textContent = dp.text; elPrev.className = dp.cls;
+  fitOneLine(elPrev, 26, 15, 1);
+  fitOneLine(document.getElementById('weight-main'), 34, 20, 1);
 
   const yesterday21 = new Date(latest.created_at);
   yesterday21.setDate(yesterday21.getDate() - 1); yesterday21.setHours(21,0,0,0);
@@ -1288,6 +1432,7 @@ function updateUI() {
   const dd = diffStr(weightNow, dayFeed ? parseFloat(dayFeed.field1) : null);
   const elDay = document.getElementById('diff-day');
   elDay.textContent = dd.text; elDay.className = dd.cls;
+  fitOneLine(elDay, 22, 14, 1);
 
   // Διαφορά σε σχέση με την ίδια ώρα χθες (π.χ. σήμερα 12:00 vs χθες 12:00)
   const sameTimeYesterday = new Date(latest.created_at);
@@ -1306,6 +1451,7 @@ function updateUI() {
   if (elSameTime) {
     elSameTime.textContent = ds.text;
     elSameTime.className = ds.cls;
+    fitOneLine(elSameTime, 14, 11, 1);
   }
   // Όταν η τρέχουσα (τελευταία) μέτρηση είναι η βραδινή των 21:00, η "Διαφορά χθεσινής ίδιας ώρας"
   // ταυτίζεται ουσιαστικά με τη "Διαφορά Ημέρας" (χθεσινή βραδινή μέτρηση) — άρα κρύβουμε τη γραμμή.
@@ -1436,18 +1582,59 @@ function setRangeMode(mode) {
   document.getElementById('range-date-row').style.display  = mode === 'date'  ? 'flex' : 'none';
 }
 
-function getFilteredFeeds() {
+function getFilteredFeeds(sourceFeeds) {
+  const src = sourceFeeds || allFeeds;
   if (rangeMode === 'count') {
     const n = Math.max(5, Math.min(500, parseInt(document.getElementById('inp-count').value) || 20));
-    return allFeeds.slice(-n);
+    return src.slice(-n);
   } else {
     const from = document.getElementById('inp-date-from').value;
     const to   = document.getElementById('inp-date-to').value;
-    if (!from && !to) return allFeeds.slice(-50);
+    if (!from && !to) return src.slice(-50);
     const fromTs = from ? new Date(from).getTime() : 0;
     const toTs   = to   ? new Date(to + 'T23:59:59').getTime() : Infinity;
-    return allFeeds.filter(f => { const t = new Date(f.created_at).getTime(); return t >= fromTs && t <= toTs; });
+    return src.filter(f => { const t = new Date(f.created_at).getTime(); return t >= fromTs && t <= toTs; });
   }
+}
+
+// ── ΣΥΓΚΡΙΣΗ ΖΥΓΑΡΙΩΝ: UI + φόρτωση δεδομένων άλλων καναλιών ──
+function renderCompareChannelsUI() {
+  const container = document.getElementById('compare-channels-row');
+  if (!container) return;
+  compareSelectedChannels = new Set([activeChannelIndex]);
+  container.innerHTML = CHANNELS.map((ch, i) =>
+    `<button type="button" class="compare-ch-btn${i === activeChannelIndex ? ' active' : ''}" id="cmp-ch-${i}" onclick="toggleCompareChannel(${i})">No ${i + 1}</button>`
+  ).join('');
+}
+function toggleCompareChannel(idx) {
+  if (compareSelectedChannels.has(idx)) {
+    if (compareSelectedChannels.size <= 1) return; // πρέπει να μείνει τουλάχιστον 1 επιλεγμένη ζυγαριά
+    compareSelectedChannels.delete(idx);
+  } else {
+    compareSelectedChannels.add(idx);
+  }
+  const btn = document.getElementById('cmp-ch-' + idx);
+  if (btn) btn.classList.toggle('active', compareSelectedChannels.has(idx));
+  renderGraphs();
+}
+function toggleCompareMode() {
+  compareMode = document.getElementById('gt-compare').checked;
+  const row = document.getElementById('compare-channels-row');
+  if (row) row.style.display = compareMode ? 'flex' : 'none';
+  renderGraphs();
+}
+// Φορτώνει (ή επιστρέφει από cache) τα feeds ενός καναλιού/ζυγαριάς με index idx.
+// Το ενεργό κανάλι έχει ήδη τα feeds του στο allFeeds (φορτωμένα από loadData).
+async function ensureChannelFeedsLoaded(idx) {
+  if (idx === activeChannelIndex) { compareFeedsCache[idx] = allFeeds; return allFeeds; }
+  if (compareFeedsCache[idx]) return compareFeedsCache[idx];
+  const chId = CHANNELS[idx];
+  const res = await fetch(`https://api.thingspeak.com/channels/${chId}/feeds.json?results=500`);
+  const data = await res.json();
+  const rawFeeds = data.feeds.filter(f => f.field1 && f.field1 !== '' && !isNaN(parseFloat(f.field1)));
+  const feeds = deduplicateFeeds(rawFeeds);
+  compareFeedsCache[idx] = feeds;
+  return feeds;
 }
 
 function applyGraphRange() { renderGraphs(); }
@@ -1472,70 +1659,164 @@ function destroyGraphCharts() {
   graphCharts = {};
 }
 
-function renderGraphs() {
-  const feeds = getFilteredFeeds();
+async function renderGraphs() {
   const container = document.getElementById('graphs-container');
-  container.innerHTML = '';
+  const nodataEl = document.getElementById('graphs-nodata');
   destroyGraphCharts();
+
+  const doingCompare = compareMode && CHANNELS.length >= 2 && compareSelectedChannels.size >= 2;
+
+  let channelSeries;
+  if (doingCompare) {
+    container.innerHTML = '';
+    nodataEl.style.display = 'block';
+    nodataEl.textContent = 'Φόρτωση δεδομένων σύγκρισης...';
+    const idxList = Array.from(compareSelectedChannels).sort((a, b) => a - b);
+    let feedsPerChannel;
+    try {
+      feedsPerChannel = await Promise.all(idxList.map(i => ensureChannelFeedsLoaded(i)));
+    } catch (e) {
+      nodataEl.style.display = 'block';
+      nodataEl.textContent = 'Σφάλμα φόρτωσης δεδομένων σύγκρισης: ' + e.message;
+      return;
+    }
+    channelSeries = idxList.map((i, k) => ({ idx: i, feeds: getFilteredFeeds(feedsPerChannel[k]) }));
+  } else {
+    channelSeries = [{ idx: activeChannelIndex, feeds: getFilteredFeeds() }];
+  }
+
+  container.innerHTML = '';
+  const primaryFeeds = channelSeries[0].feeds;
 
   // Εμφάνιση του toggle "Σύνδεση" μόνο αν το field6 υπάρχει πραγματικά ως τύπος σύνδεσης σε αυτό το κανάλι/εύρος
   const connItem = document.getElementById('gtoggle-conn-item');
-  const hasConnData = isConnField6Available() && feeds.some(f => f.field6 === '11' || f.field6 === '22');
+  const hasConnData = isConnField6Available() && primaryFeeds.some(f => f.field6 === '11' || f.field6 === '22');
   if (connItem) connItem.style.display = hasConnData ? 'flex' : 'none';
 
   const activeDefs = getGraphDefs().filter(d => document.getElementById(d.toggleId).checked && (d.id !== 'conn' || hasConnData));
-  if (!activeDefs.length || !feeds.length) {
-    document.getElementById('graphs-nodata').style.display = 'block';
-    document.getElementById('graphs-nodata').textContent = feeds.length ? 'Επιλέξτε τουλάχιστον ένα γράφημα.' : 'Δεν υπάρχουν δεδομένα για το επιλεγμένο εύρος.';
+  const anyFeeds = channelSeries.some(cs => cs.feeds.length);
+  if (!activeDefs.length || !anyFeeds) {
+    nodataEl.style.display = 'block';
+    nodataEl.textContent = anyFeeds ? 'Επιλέξτε τουλάχιστον ένα γράφημα.' : 'Δεν υπάρχουν δεδομένα για το επιλεγμένο εύρος.';
     return;
   }
-  document.getElementById('graphs-nodata').style.display = 'none';
+  nodataEl.style.display = 'none';
 
-  const labels = feeds.map(f => fmtDateShort(f.created_at));
+  if (channelSeries.length === 1) {
+    // ── ΜΙΑ ΖΥΓΑΡΙΑ: ίδια συμπεριφορά όπως πριν ──
+    const feeds = channelSeries[0].feeds;
+    const labels = feeds.map(f => fmtDateShort(f.created_at));
 
-  activeDefs.forEach(def => {
-    let vals, values;
-    if (def.categorical) {
-      // Χαρτογράφηση 11->1 (WiFi), 22->2 (GSM), οτιδήποτε άλλο -> null
-      vals = feeds.map(f => {
-        const raw = String(f[def.field] || '').trim();
-        if (raw === '11') return 1;
-        if (raw === '22') return 2;
-        return null;
-      });
-      values = vals.filter(v => v !== null);
-    } else {
-      values = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null).filter(v => v !== null);
-      vals = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null);
-    }
-    if (!values.length) return;
+    activeDefs.forEach(def => {
+      let vals, values;
+      if (def.categorical) {
+        // Χαρτογράφηση 11->1 (WiFi), 22->2 (GSM), οτιδήποτε άλλο -> null
+        vals = feeds.map(f => {
+          const raw = String(f[def.field] || '').trim();
+          if (raw === '11') return 1;
+          if (raw === '22') return 2;
+          return null;
+        });
+        values = vals.filter(v => v !== null);
+      } else {
+        values = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null).filter(v => v !== null);
+        vals = feeds.map(f => f[def.field] ? parseFloat(f[def.field]) : null);
+      }
+      if (!values.length) return;
 
-    const block = document.createElement('div');
-    block.className = 'graph-block';
-    block.innerHTML = `<div class="graph-block-title">${def.label}</div><div class="graph-block-wrap"><canvas id="gc-${def.id}"></canvas></div>`;
-    container.appendChild(block);
+      const block = document.createElement('div');
+      block.className = 'graph-block';
+      block.innerHTML = `<div class="graph-block-title">${def.label}</div><div class="graph-block-wrap"><canvas id="gc-${def.id}"></canvas></div>`;
+      container.appendChild(block);
 
-    requestAnimationFrame(() => {
-      const ctx = document.getElementById('gc-' + def.id);
-      if (!ctx) return;
-      const yLabelFor = v => def.categorical ? (def.catMap[v === 1 ? 11 : v === 2 ? 22 : null] || '') : v.toFixed(def.toFixed);
-      graphCharts[def.id] = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: def.label, data: vals, borderColor: def.color, backgroundColor: def.color + '18', pointBackgroundColor: def.color, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 10, pointHoverBackgroundColor: def.color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3, borderWidth: 2, tension: def.categorical ? 0 : 0.2, stepped: def.categorical ? 'middle' : false, fill: def.categorical ? false : true, spanGaps: true }]},
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          interaction: { mode: 'nearest', intersect: true },
-          plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: def.color, borderWidth: 1, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 14, weight: 'bold' },
-            callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + def.unit) : '—') }
-          }},
-          scales: {
-            x: { ticks: { font: { size: 8 }, color: chartAxisColor(), maxRotation: 0 }, grid: { color: chartGridColor() } },
-            y: def.categorical
-              ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: chartAxisColor(), stepSize: 1, callback: yLabelFor }, grid: { color: chartGridColor() } }
-              : { ticks: { font: { size: 9 }, color: chartAxisColor(), callback: v => v.toFixed(def.toFixed) }, grid: { color: chartGridColor() } }
+      requestAnimationFrame(() => {
+        const ctx = document.getElementById('gc-' + def.id);
+        if (!ctx) return;
+        const yLabelFor = v => def.categorical ? (def.catMap[v === 1 ? 11 : v === 2 ? 22 : null] || '') : v.toFixed(def.toFixed);
+        graphCharts[def.id] = new Chart(ctx, {
+          type: 'line',
+          data: { labels, datasets: [{ label: def.label, data: vals, borderColor: def.color, backgroundColor: def.color + '18', pointBackgroundColor: def.color, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 10, pointHoverBackgroundColor: def.color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3, borderWidth: 2, tension: def.categorical ? 0 : 0.2, stepped: def.categorical ? 'middle' : false, fill: def.categorical ? false : true, spanGaps: true }]},
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'nearest', intersect: true },
+            plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: def.color, borderWidth: 1, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 14, weight: 'bold' },
+              callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + def.unit) : '—') }
+            }},
+            scales: {
+              x: { ticks: { font: { size: 8 }, color: chartAxisColor(), maxRotation: 0 }, grid: { color: chartGridColor() } },
+              y: def.categorical
+                ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: chartAxisColor(), stepSize: 1, callback: yLabelFor }, grid: { color: chartGridColor() } }
+                : { ticks: { font: { size: 9 }, color: chartAxisColor(), callback: v => v.toFixed(def.toFixed) }, grid: { color: chartGridColor() } }
+            }
           }
-        }
+        });
       });
+    });
+  } else {
+    // ── ΣΥΓΚΡΙΣΗ ΠΟΛΛΩΝ ΖΥΓΑΡΙΩΝ: κοινός γράφημα ανά μέγεθος, μία γραμμή/χρώμα ανά ζυγαριά ──
+    activeDefs.forEach(def => buildCompareChart(def, channelSeries, container));
+  }
+}
+
+// Χτίζει ένα γράφημα σύγκρισης (πολλές ζυγαριές) για ένα συγκεκριμένο μέγεθος (π.χ. Βάρος)
+function buildCompareChart(def, channelSeries, container) {
+  const block = document.createElement('div');
+  block.className = 'graph-block';
+  block.innerHTML = `<div class="graph-block-title">${def.label} — Σύγκριση</div><div class="graph-block-wrap"><canvas id="gc-${def.id}"></canvas></div>`;
+  container.appendChild(block);
+
+  requestAnimationFrame(() => {
+    const ctx = document.getElementById('gc-' + def.id);
+    if (!ctx) return;
+    const yLabelFor = v => def.categorical ? (def.catMap[v === 1 ? 11 : v === 2 ? 22 : null] || '') : v.toFixed(def.toFixed);
+
+    const datasets = channelSeries.map((cs, k) => {
+      const color = compareColorFor(k);
+      const points = cs.feeds.map(f => {
+        let y;
+        if (def.categorical) {
+          const raw = String(f[def.field] || '').trim();
+          y = raw === '11' ? 1 : raw === '22' ? 2 : null;
+        } else {
+          y = f[def.field] ? parseFloat(f[def.field]) : null;
+        }
+        return y === null ? null : { x: new Date(f.created_at).getTime(), y };
+      }).filter(p => p !== null);
+      return {
+        label: 'No ' + (cs.idx + 1),
+        data: points,
+        borderColor: color, backgroundColor: color + '18',
+        pointBackgroundColor: color, pointBorderColor: '#fff', pointBorderWidth: 2,
+        pointRadius: 5, pointHoverRadius: 8, borderWidth: 2,
+        tension: def.categorical ? 0 : 0.2, stepped: def.categorical ? 'middle' : false,
+        fill: false, spanGaps: true
+      };
+    }).filter(ds => ds.data.length);
+
+    if (!datasets.length) { block.remove(); return; }
+
+    graphCharts[def.id] = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'top', labels: { color: chartAxisColor(), font: { size: 10 }, boxWidth: 12, usePointStyle: true } },
+          tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderWidth: 1, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 13, weight: 'bold' },
+            callbacks: {
+              title: items => items.length ? fmtDate(new Date(items[0].parsed.x).toISOString()) : '',
+              label: ctx => '  ' + ctx.dataset.label + ': ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + (def.unit || '')) : '—')
+            }
+          }
+        },
+        scales: {
+          x: { type: 'linear', ticks: { font: { size: 8 }, color: chartAxisColor(), maxRotation: 0, callback: v => fmtDateShort(new Date(v).toISOString()) }, grid: { color: chartGridColor() } },
+          y: def.categorical
+            ? { min: 0.5, max: 2.5, ticks: { font: { size: 9 }, color: chartAxisColor(), stepSize: 1, callback: yLabelFor }, grid: { color: chartGridColor() } }
+            : { ticks: { font: { size: 9 }, color: chartAxisColor(), callback: v => v.toFixed(def.toFixed) }, grid: { color: chartGridColor() } }
+        }
+      }
     });
   });
 }
