@@ -35,7 +35,8 @@
 body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding-bottom: 72px; }
 
 /* ── LOGIN ── */
-#login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+#login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%); background-size: 250% 250%; animation: honeyBgFlow 16s ease-in-out infinite; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+@keyframes honeyBgFlow { 0% { background-position: 0% 30%; } 50% { background-position: 100% 70%; } 100% { background-position: 0% 30%; } }
 .login-logo { font-size: 64px; margin-bottom: 10px; }
 .login-ibee { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: 1px; margin-bottom: 4px; }
 .login-title { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 4px; }
@@ -65,7 +66,7 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 .remember-label { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 500; }
 
 /* ── CHANNEL SELECT SCREEN ── */
-#channel-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 999; padding: 24px; }
+#channel-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%); background-size: 250% 250%; animation: honeyBgFlow 16s ease-in-out infinite; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 999; padding: 24px; }
 #channel-screen.visible { display: flex; }
 .channel-logo { font-size: 56px; margin-bottom: 10px; }
 .channel-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
@@ -110,14 +111,16 @@ body { background: #e8e8e8; font-family: 'Segoe UI', Arial, sans-serif; max-widt
 /* ── CHANNEL SWITCH PILL ── */
 .channel-switch-bar { display: none; background: #c8c8c8; padding: 8px 16px; border-bottom: 1px solid #b0b0b0; justify-content: center; align-items: center; gap: 10px; }
 .channel-switch-bar.visible { display: flex; }
-.ch-pill { display: flex; background: #b0b0b0; border-radius: 20px; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
-.ch-pill-btn { padding: 6px 16px; font-size: 13px; font-weight: 700; color: #555; border: none; background: transparent; cursor: pointer; transition: background 0.2s, color 0.2s; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-.ch-pill-btn.active { background: #333; color: #fff; }
+.ch-pill { display: flex; position: relative; background: #b0b0b0; border-radius: 20px; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+.ch-pill-indicator { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: #333; border-radius: 20px; transition: transform 0.28s cubic-bezier(.4,0,.2,1), width 0.28s cubic-bezier(.4,0,.2,1); z-index: 0; pointer-events: none; }
+.ch-pill-btn { position: relative; z-index: 1; padding: 6px 16px; font-size: 13px; font-weight: 700; color: #555; border: none; background: transparent; cursor: pointer; transition: color 0.2s; border-radius: 20px; white-space: nowrap; flex-shrink: 0; overflow: hidden; }
+.ch-pill-btn.active { background: transparent; color: #fff; }
 .ch-switch-label { font-size: 12px; color: #666; font-weight: 600; }
 
 /* ── TAB PAGES ── */
 .tab-page { display: none; }
-.tab-page.active { display: block; }
+.tab-page.active { display: block; animation: tabFadeIn 0.28s ease; }
+@keyframes tabFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── MAIN CARDS ── */
 .weight-card { background: #ececec; padding: 14px 16px 10px; border-bottom: 2px solid #ccc; display: flex; flex-direction: column; align-items: center; }
@@ -221,6 +224,18 @@ html.dark-mode .skel-chart-wrap { background: #1a1a1a; }
 /* ── BLINK / COLORS ── */
 @keyframes blink-red { 0%, 100% { color: #cc1a1a; opacity: 1; } 50% { color: #ff0000; opacity: 0.25; } }
 .blink-alert { animation: blink-red 0.7s ease-in-out infinite !important; }
+@keyframes weight-pulse-glow {
+  0% { text-shadow: 0 0 0px rgba(62,207,62,0); }
+  30% { text-shadow: 0 0 16px rgba(62,207,62,0.9); }
+  100% { text-shadow: 0 0 0px rgba(62,207,62,0); }
+}
+.weight-pulse { animation: weight-pulse-glow 0.9s ease-out; }
+/* ── RIPPLE EFFECT (Material-style) ── */
+.ripple-span { position: absolute; border-radius: 50%; transform: scale(0); background: rgba(255,255,255,0.5); animation: rippleAnim 0.6s ease-out; pointer-events: none; }
+@keyframes rippleAnim { to { transform: scale(2.6); opacity: 0; } }
+.btn-login, .btn-channel, .btn-back-ch, .nav-btn, .ch-pill-btn, .btn-tare, .btn-logout, .theme-toggle-top, .btn-notif, .btn-clear, .compare-ch-btn, .range-mode-btn, .btn-confirm-yes, .btn-confirm-no, .refresh-top, .btn-notes-clear {
+  position: relative; overflow: hidden;
+}
 @keyframes blink-blue { 0%, 100% { color: #1a6dcc; opacity: 1; } 50% { color: #55aaff; opacity: 0.3; } }
 .blink-blue { animation: blink-blue 0.9s ease-in-out infinite !important; }
 .temp-cold { color: #1a6dcc !important; }
@@ -277,7 +292,8 @@ html.dark-mode .skel-chart-wrap { background: #1a1a1a; }
 .gtoggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.3s; }
 .gtoggle input:checked + .gtoggle-slider { background: #4a9e4a; }
 .gtoggle input:checked + .gtoggle-slider:before { transform: translateX(18px); }
-.graph-block { background: #fff; margin: 8px 8px 0; border-radius: 10px; padding: 12px 10px; overflow: hidden; }
+.graph-block { background: #fff; margin: 8px 8px 0; border-radius: 10px; padding: 12px 10px; overflow: hidden; animation: graphBlockIn 0.42s ease both; }
+@keyframes graphBlockIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 .graph-block-title { font-size: 11px; color: #888; margin-bottom: 8px; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 .graph-block-wrap { position: relative; height: 180px; }
 .graph-loading { text-align: center; padding: 40px 0; color: #bbb; font-size: 12px; }
@@ -346,6 +362,14 @@ html.dark-mode .skel-chart-wrap { background: #1a1a1a; }
 .push-toast-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
 .push-toast-msg { font-size: 13px; opacity: 0.85; line-height: 1.4; }
 /* ── DARK MODE ── */
+/* ── Ομαλή μετάβαση χρωμάτων στο dark mode ── */
+html, body, .header, .weight-card, .sensors-card, .tare-card, .chart-card, .info-card, .info-section-title,
+.appearance-card, .bottom-nav, .nav-btn, .theme-toggle-top, .channel-switch-bar, .ch-pill, .ch-pill-btn,
+.notif-wrap, .graphs-header, .graph-block, .prev-panel, .prev-item, .notes-textarea, .range-input,
+.range-mode-pill, .compare-ch-btn, .weight-value, .sensor-value, .diff-row, .last-time, .btn-logout,
+.badge, .refresh-top {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+}
 html.dark-mode body { background: #121212; color: #e6e6e6; }
 html.dark-mode .header { background: #1c1c1c; border-bottom-color: #333; }
 html.dark-mode .header-title span.black { color: #f0f0f0; }
@@ -358,8 +382,9 @@ html.dark-mode .theme-toggle-top { background: #2a2a2a; }
 html.dark-mode .theme-toggle-top:active { background: #444; }
 html.dark-mode .channel-switch-bar { background: #1e1e1e; border-bottom-color: #333; }
 html.dark-mode .ch-pill { background: #2a2a2a; }
+html.dark-mode .ch-pill-indicator { background: #4a9e4a; }
 html.dark-mode .ch-pill-btn { color: #bbb; }
-html.dark-mode .ch-pill-btn.active { background: #4a9e4a; color: #fff; }
+html.dark-mode .ch-pill-btn.active { background: transparent; color: #fff; }
 html.dark-mode .ch-switch-label { color: #999; }
 html.dark-mode .weight-card { background: #1a1a1a; border-bottom-color: #2e2e2e; }
 html.dark-mode .weight-value { color: #f5f5f5; }
@@ -468,7 +493,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
     <button class="btn-login" id="btn-login" onclick="doLogin()">ΣΥΝΔΕΣΗ</button>
   </div>
   <div class="login-footer">
-    <div class="login-version">ver. 15.6.1</div>
+    <div class="login-version">ver. 15.7.0</div>
     <div class="login-contact">Επικοινωνία : <a href="tel:+306970065700">+306970065700</a></div>
   </div>
 </div>
@@ -744,7 +769,7 @@ html.dark-mode .expired-ok-badge { background: #1c3a1c; color: #6fe06f; }
       <div class="info-row"><span class="info-row-label">TS id :</span><span class="info-row-val" id="info-tsid">—</span></div>
       <div class="info-row"><span class="info-row-label">sim S/N :</span><span class="info-row-val" id="info-sim">—</span></div>
       <div class="info-row"><span class="info-row-label">expired date :</span><span class="info-row-val" id="info-expired">—</span></div>
-      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.6.1</span></div>
+      <div class="info-row"><span class="info-row-label">version :</span><span class="info-row-val">v15.7.0</span></div>
     </div>
 
     <!-- SIM STATUS BANNER -->
@@ -966,6 +991,63 @@ let alertShownForSession = false, alertBatShown = false;
 let confirmCallback = null;
 let rangeMode = 'count'; // 'count' | 'date'
 
+// ── HAPTIC FEEDBACK ──
+function hapticFeedback(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern || 15); } catch(e) {}
+}
+
+// ── COUNT-UP ANIMATION + FLASH/GLOW ΓΙΑ ΤΟ ΒΑΡΟΣ ──
+let _lastRenderedWeight = null;
+let _weightAnimFrame = null;
+function animateWeightUpdate(newWeight) {
+  const el = document.getElementById('weight-main');
+  if (!el || isNaN(newWeight)) return;
+  const startVal = (_lastRenderedWeight === null) ? newWeight : _lastRenderedWeight;
+  const isNewMeasurement = _lastRenderedWeight !== null && Math.abs(newWeight - _lastRenderedWeight) > 0.0001;
+  if (_weightAnimFrame) cancelAnimationFrame(_weightAnimFrame);
+  const duration = 700;
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const current = startVal + (newWeight - startVal) * eased;
+    el.textContent = current.toFixed(3) + ' kg';
+    if (t < 1) {
+      _weightAnimFrame = requestAnimationFrame(step);
+    } else {
+      el.textContent = newWeight.toFixed(3) + ' kg';
+      _lastRenderedWeight = newWeight;
+      fitOneLine(el, 34, 20, 1);
+    }
+  }
+  _weightAnimFrame = requestAnimationFrame(step);
+  if (isNewMeasurement) {
+    el.classList.remove('weight-pulse');
+    void el.offsetWidth; // reflow για επανεκκίνηση animation
+    el.classList.add('weight-pulse');
+    setTimeout(() => el.classList.remove('weight-pulse'), 950);
+  }
+}
+
+// ── RIPPLE EFFECT (Material-style) σε βασικά κουμπιά της εφαρμογής ──
+const RIPPLE_SELECTOR = '.btn-login, .btn-channel, .btn-back-ch, .nav-btn, .ch-pill-btn, .btn-tare, .btn-logout, .theme-toggle-top, .btn-notif, .btn-clear, .compare-ch-btn, .range-mode-btn, .btn-confirm-yes, .btn-confirm-no, .refresh-top, .btn-notes-clear';
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest(RIPPLE_SELECTOR);
+  if (!btn || btn.disabled) return;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const hasCoords = e.clientX || e.clientY;
+  const x = hasCoords ? (e.clientX - rect.left) : rect.width / 2;
+  const y = hasCoords ? (e.clientY - rect.top) : rect.height / 2;
+  const span = document.createElement('span');
+  span.className = 'ripple-span';
+  span.style.width = span.style.height = size + 'px';
+  span.style.left = (x - size / 2) + 'px';
+  span.style.top = (y - size / 2) + 'px';
+  btn.appendChild(span);
+  span.addEventListener('animationend', () => span.remove());
+}, true);
+
 // ── ALERT ──
 function showAlert(title, msg, detail) {
   document.getElementById('alert-title-text').textContent = title;
@@ -1147,6 +1229,7 @@ function switchChannel(idx) {
   if (idx === activeChannelIndex) return;
   activeChannelIndex = idx; CHANNEL = CHANNELS[idx];
   alertShownForSession = false; alertBatShown = false;
+  _lastRenderedWeight = null; // νέο κανάλι -> να μην κάνει count-up/pulse από την τιμή του προηγούμενου καναλιού
   document.getElementById('hdr-badge').textContent = 'No ' + (idx + 1);
   updatePills(); restoreTare(); restoreNotes(); loadData(); populateInfoTab();
   window.scrollTo(0, 0);
@@ -1154,16 +1237,24 @@ function switchChannel(idx) {
 // Φτιάχνει δυναμικά ένα pill-κουμπί ανά κανάλι (2, 3, 4... όσα έχει ο χρήστης)
 function renderPills() {
   const container = document.getElementById('ch-pill-container');
-  container.innerHTML = CHANNELS.map((ch, i) =>
+  container.innerHTML = '<div class="ch-pill-indicator" id="ch-pill-indicator"></div>' + CHANNELS.map((ch, i) =>
     `<button class="ch-pill-btn" id="pill-${i}" onclick="switchChannel(${i})">No ${i + 1}</button>`
   ).join('');
+  requestAnimationFrame(updatePills);
 }
 function updatePills() {
   CHANNELS.forEach((ch, i) => {
     const el = document.getElementById('pill-' + i);
     if (el) el.classList.toggle('active', activeChannelIndex === i);
   });
+  const indicator = document.getElementById('ch-pill-indicator');
+  const activeEl = document.getElementById('pill-' + activeChannelIndex);
+  if (indicator && activeEl) {
+    indicator.style.width = activeEl.offsetWidth + 'px';
+    indicator.style.transform = 'translateX(' + activeEl.offsetLeft + 'px)';
+  }
 }
+window.addEventListener('resize', () => { if (typeof updatePills === 'function' && window.CHANNELS && window.CHANNELS.length) updatePills(); });
 
 // ── TAB SWITCHING ──
 function switchTab(tab) {
@@ -1180,6 +1271,7 @@ function doLogout() {
   CHANNEL = ''; currentUser = ''; CHANNELS = []; allFeeds = []; graphFeeds = []; activeChannelIndex = 0;
   userRow = null; tareWeight = null; tareDate = null;
   alertShownForSession = false; alertBatShown = false; window._simAlertShown = false;
+  _lastRenderedWeight = null;
   clearLoginWarnings();
   window.currentUser = ''; window.CHANNELS = [];
   if (window.refreshNotifButtonState) window.refreshNotifButtonState(); // ξεκαθαρίζει τα κουμπιά ειδοποιήσεων για τον επόμενο χρήστη
@@ -1369,7 +1461,7 @@ function updateUI() {
   const prev   = allFeeds.length >= 2 ? allFeeds[allFeeds.length - 2] : null;
   const weightNow = parseFloat(latest.field1);
 
-  document.getElementById('weight-main').textContent = weightNow.toFixed(3) + ' kg';
+  animateWeightUpdate(weightNow);
   document.getElementById('last-time').textContent = 'Τελευταία μέτρηση: ' + fmtDate(latest.created_at);
   setConnBadge('conn-badge-last', latest);
 
@@ -1420,7 +1512,8 @@ function updateUI() {
   const elPrev = document.getElementById('diff-prev');
   elPrev.textContent = dp.text; elPrev.className = dp.cls;
   fitOneLine(elPrev, 26, 15, 1);
-  fitOneLine(document.getElementById('weight-main'), 34, 20, 1);
+  // Σημείωση: το μέγεθος γραμματοσειράς του weight-main ρυθμίζεται πλέον
+  // εσωτερικά από την animateWeightUpdate() όταν ολοκληρωθεί το count-up.
 
   const yesterday21 = new Date(latest.created_at);
   yesterday21.setDate(yesterday21.getDate() - 1); yesterday21.setHours(21,0,0,0);
@@ -1478,6 +1571,7 @@ function updateUI() {
     const details = [];
     if (dayAlert)  details.push('Διαφορά Ημέρας: ' + dd.text);
     if (prevAlert) details.push('Διαφορά Προηγ. Μέτρησης: ' + dp.text);
+    hapticFeedback([80,50,80,50,80]);
     showAlert('ΕΙΔΟΠΟΙΗΣΗ ΖΥΓΑΡΙΑΣ', 'ΠΡΟΣΟΧΗ!\nΥπάρχει μεγάλη πτώση βάρους στη ζυγαριά!', details.join('  |  '));
   }
   if (!dayAlert && !prevAlert) alertShownForSession = false;
@@ -1528,6 +1622,7 @@ function updateUI() {
   batEl.classList.toggle('blink-alert', batNow !== null && batNow < 2.9);
   if (batNow !== null && batNow < 2.9 && !alertBatShown) {
     alertBatShown = true;
+    hapticFeedback([80,50,80,50,80]);
     showAlert('🔋 Χαμηλή Μπαταρία', 'Προσοχή!\nΧαμηλή στάθμη μπαταρίας!', batNow.toFixed(2) + ' v');
   }
   if (batNow !== null && batNow >= 2.9) alertBatShown = false;
@@ -1563,6 +1658,7 @@ function drawChart(feeds) {
     data: { labels, datasets: [{ label: 'Βάρος (kg)', data: values, borderColor: '#f0a500', backgroundColor: 'rgba(240,165,0,0.10)', pointBackgroundColor: '#f0a500', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 9, borderWidth: 2, tension: 0.2, fill: true }]},
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeOutQuart' },
       plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: '#f0a500', borderWidth: 1, padding: 10,
         callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + ctx.parsed.y.toFixed(3) + ' kg' }
       }},
@@ -1726,6 +1822,7 @@ async function renderGraphs() {
 
       const block = document.createElement('div');
       block.className = 'graph-block';
+      block.style.animationDelay = (container.children.length * 70) + 'ms';
       block.innerHTML = `<div class="graph-block-title">${def.label}</div><div class="graph-block-wrap"><canvas id="gc-${def.id}"></canvas></div>`;
       container.appendChild(block);
 
@@ -1738,6 +1835,7 @@ async function renderGraphs() {
           data: { labels, datasets: [{ label: def.label, data: vals, borderColor: def.color, backgroundColor: def.color + '18', pointBackgroundColor: def.color, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 10, pointHoverBackgroundColor: def.color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3, borderWidth: 2, tension: def.categorical ? 0 : 0.2, stepped: def.categorical ? 'middle' : false, fill: def.categorical ? false : true, spanGaps: true }]},
           options: {
             responsive: true, maintainAspectRatio: false,
+            animation: { duration: 800, easing: 'easeOutQuart' },
             interaction: { mode: 'nearest', intersect: true },
             plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: '#222', titleColor: '#ccc', bodyColor: '#fff', borderColor: def.color, borderWidth: 1, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 14, weight: 'bold' },
               callbacks: { title: items => fmtDate(feeds[items[0].dataIndex].created_at), label: ctx => '  ' + (ctx.parsed.y !== null ? (def.categorical ? yLabelFor(ctx.parsed.y) : ctx.parsed.y.toFixed(def.toFixed) + def.unit) : '—') }
@@ -1762,6 +1860,7 @@ async function renderGraphs() {
 function buildCompareChart(def, channelSeries, container) {
   const block = document.createElement('div');
   block.className = 'graph-block';
+  block.style.animationDelay = (container.children.length * 70) + 'ms';
   block.innerHTML = `<div class="graph-block-title">${def.label} — Σύγκριση</div><div class="graph-block-wrap"><canvas id="gc-${def.id}"></canvas></div>`;
   container.appendChild(block);
 
@@ -1800,6 +1899,7 @@ function buildCompareChart(def, channelSeries, container) {
       data: { datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
+        animation: { duration: 800, easing: 'easeOutQuart' },
         interaction: { mode: 'nearest', intersect: false },
         plugins: {
           legend: { display: true, position: 'top', labels: { color: chartAxisColor(), font: { size: 10 }, boxWidth: 12, usePointStyle: true } },
@@ -1917,7 +2017,7 @@ async function populateInfoTab() {
       toastIcon = '❌'; toastMsg = 'ΠΡΟΣΟΧΗ η κάρτα SIM έχει λήξει!'; toastCls = 'toast-err err';
       if (!window._simAlertShown) {
         window._simAlertShown = true;
-        setTimeout(() => showAlert('📵 Κάρτα SIM', 'ΠΡΟΣΟΧΗ η κάρτα SIM έχει λήξει!', 'Ημ/νία λήξης: ' + dateStr), 800);
+        setTimeout(() => { hapticFeedback([80,50,80,50,80]); showAlert('📵 Κάρτα SIM', 'ΠΡΟΣΟΧΗ η κάρτα SIM έχει λήξει!', 'Ημ/νία λήξης: ' + dateStr); }, 800);
       }
     } else if (daysLeft <= 30) {
       expEl.className = 'info-row-val expired';
@@ -1981,6 +2081,7 @@ function doTare() {
   const latest = allFeeds[allFeeds.length - 1];
   tareWeight = parseFloat(latest.field1); tareDate = latest.created_at;
   document.getElementById('btn-tare').disabled = true;
+  hapticFeedback(25);
   updateTareDiff(tareWeight);
   // Αποθήκευση ΜΟΝΟ στο Google Sheet (στήλη G) - όχι τοπικά στο κινητό
   const sheetValue = tareWeight.toFixed(3) + ' kg - ' + fmtDate(tareDate);
@@ -2162,6 +2263,7 @@ window._requestNotificationPermission = async function() {
       btn.style.display = 'none';
       document.getElementById('notif-disable-btn').style.display = 'block';
       infoEl.textContent = '✅ Ενεργοποιημένες';
+      if (window.hapticFeedback) window.hapticFeedback([15,40,15]);
       window.showPushToast('✅', 'Ειδοποιήσεις', 'Ενεργοποιήθηκαν επιτυχώς!');
     }
   } catch(e) {
