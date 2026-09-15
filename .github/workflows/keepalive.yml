@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write # Απαιτείται μόνο δικαίωμα εγγραφής στο αποθετήριο
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Keepalive Commit
         run: |
