@@ -1,0 +1,16 @@
+name: Keepalive Workflow
+
+on:
+  schedule:
+    # Εκτελείται κάθε 40 ημέρες για να προλάβει το όριο των 60 ημερών
+    - cron: '0 0 */40 * *'
+  workflow_dispatch: # Επιτρέπει και τη χειροκίνητη εκτέλεση
+
+jobs:
+  cronjob-based-workflow:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2 
