@@ -1384,26 +1384,31 @@ function doRefresh() {
   loadData();
 }
 
-// ── DEDUPLICATION: κρατά μόνο 1 μέτρηση ανά χρονικό παράθυρο 5 λεπτών ──
-// Οι ώρες αποστολής: 03:00-03:05, 09:00-09:05, 10:00-10:05, 11:00-11:05,
-//                    12:00-12:05, 15:00-15:05, 18:00-18:05, 21:00-21:05
-const SCHEDULE_HOURS = [3, 9, 10, 11, 12, 15, 18, 21];
+// ── DEDUPLICATION: συγχωνεύει διπλές μετρήσεις που στέλνονται σε μικρό χρονικό διάστημα ──
+// Η ζυγαριά κάποιες φορές στέλνει 2 μετρήσεις μέσα στην ίδια ώρα, με αποτέλεσμα η "διαφορά
+// προηγούμενης μέτρησης" να βγαίνει 0. Δεν εξαρτάται από συγκεκριμένες ώρες: κάθε μέτρηση που
+// απέχει λιγότερο από DEDUP_WINDOW_MIN λεπτά από την πρώτη της "ομάδας" θεωρείται διπλή.
+// Κρατάμε την ΠΙΟ ΠΡΟΣΦΑΤΗ της ομάδας (και συμπληρώνουμε από την προηγούμενη όποια πεδία λείπουν).
+const DEDUP_WINDOW_MIN = 20;
 function deduplicateFeeds(feeds) {
-  const seen = new Set();
-  return feeds.filter(f => {
-    const d = new Date(f.created_at);
-    const h = d.getHours();
-    const m = d.getMinutes();
-    // Έλεγξε αν η μέτρηση ανήκει σε κάποιο από τα προγραμματισμένα παράθυρα (hh:00 - hh:04)
-    if (SCHEDULE_HOURS.includes(h) && m >= 0 && m <= 4) {
-      // Κλειδί: χρήστης + κανάλι + ημέρα + ώρα (αγνοούμε τα λεπτά/δευτερόλεπτα)
-      const dayStr = d.toISOString().slice(0, 10); // YYYY-MM-DD
-      const key = `${dayStr}_${h}`;
-      if (seen.has(key)) return false; // διπλή — απόρριψη
-      seen.add(key);
+  const sorted = feeds.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const out = [];
+  let groupStart = null;
+  for (const f of sorted) {
+    const t = new Date(f.created_at).getTime();
+    if (out.length && groupStart !== null && (t - groupStart) < DEDUP_WINDOW_MIN * 60000) {
+      const prev = out[out.length - 1];
+      const merged = Object.assign({}, f);
+      for (const k of Object.keys(prev)) {
+        if ((merged[k] === null || merged[k] === undefined || merged[k] === '') && prev[k]) merged[k] = prev[k];
+      }
+      out[out.length - 1] = merged; // αντικατάσταση με την πιο πρόσφατη
+    } else {
+      out.push(f);
+      groupStart = t;
     }
-    return true;
-  });
+  }
+  return out;
 }
 
 // ── SKELETON LOADERS (showLoading / hideLoading) ──
